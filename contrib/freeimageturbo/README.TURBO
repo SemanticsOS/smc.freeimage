@@ -1,0 +1,15 @@
+Howto
+=====
+
+ * replaced Sources/LibJPEG with libjpeg-turbo-1.2.0
+
+ * Copied over patched Makefile.gnu
+
+ * run "fromdos *.sh"
+
+ * Removed LibJPEG from gensrclist.sh + genfipsrclist.sh and run both scripts
+
+ * Moved tif_stream.cxx to tif_stream.cpp and replace
+   string in Makefile.srcs
+
+

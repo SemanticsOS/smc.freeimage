@@ -1,0 +1,30 @@
+====
+TODO
+====
+
+Testing
+-------
+
+ * Test edge cases
+ * Test if wrong arguments result in the correct exception
+ * Check for refcnt leaks
+
+
+Bugs
+----
+
+
+Features
+--------
+
+ * Add / update documentation
+ * add possibility to change bpp - returns a new Image
+ * guess output format from filename during save2file
+ * add possibility to save to memory
+ * add pasting support as in PIL: image.paste(croppedIm, (0, 0))  <-- lower left corner
+ * add possibility to create a blank image:  newImage = Image.new(BPP, (width, height),(256,256,256)) <- Fill with RGB white
+ * Add the remaining color adjustment functions
+ * Add color channel modification functions
+ * Add code to manipulate metadata and copy metadata from one image to another
+ * Add IO wrappers for Python strings and file like objects
+

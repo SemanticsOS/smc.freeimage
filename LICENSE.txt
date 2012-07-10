@@ -1,0 +1,58 @@
+smc.freeimage Open Source Dual-License
+======================================
+
+smc.freeimage is licensed under the GNU General Public License (GPL) and the
+FreeImage Public License (FIPL)
+
+You can choose the license that has the most advantages for you:
+
+ * Use the liberal FreeImage Public License to use smc.freeimage commercially
+ 
+ or
+
+ * Use the GNU General Public License to use FreeImage into your open source 
+   project.
+
+A plain-text version of the FreeImage Public License can be found at
+http://freeimage.sourceforge.net/freeimage-license.txt.
+
+As stated in § 6.1 of this license, Floris van den Berg may publish revised
+and/or new versions of the License from time to time. Each version will be
+given a distinguishing version number.
+
+ 
+Using smc.freeimage in your application
+=======================================
+ 
+When using smc.freeimage in your open source or commercial application, you are
+REQUIRED to :
+
+ * distribute the license (GNU GPL or FIPL) you choosed with your application
+  (i.e. the TXT file)
+
+ * provide a suitable acknowledgement, either in the program's "About" box or
+   in the user's manual (or both), for example :
+
+   This software uses the FreeImage open source image library and the
+   smc.freeimage open source Python wrapper. See 
+   http://freeimage.sourceforge.net for details.
+
+   FreeImage and smc.freeimage are used under the (GNU GPL or FIPL), version
+   (license version). 
+
+ 
+Copyright
+=========
+ 
+Copyright (C) 2008-2012 semantics GmbH. All Rights Reserved.
+
+  semantics
+  Kommunikationsmanagement GmbH
+  Viktoriaallee 45
+  D-52066 Aachen
+  Germany
+
+  Tel.: +49 241 89 49 89 29
+  eMail: info(at)semantics.de
+  http://www.semantics.de/
+ 

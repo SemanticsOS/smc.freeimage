@@ -44,23 +44,6 @@ cdef extern from *:
     ctypedef void* const_void_ptr "const void*"
     ctypedef struct const_struct "const struct"
 
-cdef extern from "stdarg.h" nogil:
-    ctypedef void *va_list
-    cdef int vsnprintf(char *, size_t , const_char_ptr, va_list)
-    
-cdef extern from "time.h" nogil:
-    cdef struct tm:
-        int tm_sec
-        int tm_min
-        int tm_hour
-        int tm_mday
-        int tm_mon
-        int tm_year
-
-cdef extern from "wchar.h" nogil:
-    ctypedef char wchar_t
-    cdef size_t wcslen(wchar_t *s)
-
 cdef extern from "lcms2.h" nogil:
 
     # base types

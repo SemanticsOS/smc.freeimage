@@ -113,7 +113,7 @@ setup_info = dict(
     ext_modules=[
         Extension("smc.freeimage._freeimage", ["smc/freeimage/_freeimage.pyx"],
                   depends=["smc/freeimage/freeimage.pxi", "smc/freeimage/fipython.pxd",
-                           "smc/freeimage/lcms.pxi", "smc/freeimage/_lcms.pxi",
+                           "smc/freeimage/lcms.pxd", "smc/freeimage/_lcms.pxi",
                            "smc/freeimage/smc_fi.h"],
                   **fi_ext_extras),
         Extension("smc.freeimage.ficonstants", ["smc/freeimage/ficonstants.c"],

@@ -52,9 +52,9 @@ develop: egg_info inplace
 sdist: egg_info
 	$(PYTHON) setup.py sdist
  
-pxi:  
+pxd:  
 	$(PYTHON) fi2pxi.py
-	$(PYTHON) lcms2pxi.py
+	$(PYTHON) lcms2pxd.py
 
 benchmark: inplace
 	@echo "FreeImage"

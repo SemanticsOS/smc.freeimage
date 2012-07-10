@@ -2,15 +2,21 @@
 smc.freeimage - Semantics' FreeImage wrapper for Python
 =======================================================
 
-smc.freeimage is a Python interface to the FreeImage library. 
+smc.freeimage is a Python interface to the FreeImage and LCMS2 libraries.
 
 
 Features of FreeImage
 =====================
 
- * reading of 32 file formats and writing of 19 file formats as of
+FreeImage wraps mature and widely-used libraries like LibJPEG, LibOpenJPEG,
+LibPNG, LibRaw, LibTIFF4, OpenEXR and zlib in a consistent and powerful set
+of APIs. 
+
+http://freeimage.sourceforge.net/
+
+ * Reading of 35 file formats and writing of more than 19 file formats as of
    FreeImage 3.15.3, including JPEG 2000, multiple subformats of TIFF 
-   including G3/G4 fax compression and JPEG subsampling.
+   with G3/G4 fax compression and JPEG subsampling.
    
  * pixel depths from 1-32 bpp standard images up to formats like
    RGBAF and 2x64complex.
@@ -21,14 +27,31 @@ Features of FreeImage
  
  * Color adjustment, conversion and channel processing
  
+ * Image resizing and rotation
+ 
  * High Dynamic Range (HDR) image processing and tone mapping
  
-However FreeImage doesn't support advanced image processing, bitmap drawing
-and vector graphics.
+ * RAW camera files
+ 
+Contrary to PIL it doesn't contain advanced image filters or drawing 
+functions. FreeImage focuses on file formats
+
+
+Features of LCMS2
+=================
+
+LCMS2 is a color management engine that implements V2 and V4 ICC profiles up
+to V4.3. It supports transformation, proofing and introspection of profiles
+for a large variety of color formats and targets.
+
+http://www.littlecms.com/ 
 
 
 Features of smc.freeimage
 =========================
+
+smc.freeimage is developed as part of the closed source Visual Library
+framework.
 
  * mostly written with Cython with some lines of handwritten C Code and some
    Python helpers.

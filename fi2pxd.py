@@ -31,7 +31,7 @@ FREEIMAGE_H = "windows/FreeImage.h"
 DEFINITION = re.compile("DLL_API (.*)DLL_CALLCONV ([A-Za-z_0-9]*)\((.*)\)")
 FI_DEFAULT = re.compile(" FI_DEFAULT\(.*?\)")
 
-PXI = "smc/freeimage/freeimage.pxi"
+PXD = "smc/freeimage/freeimage.pxd"
 ENUM = "smc/freeimage/enums.py"
 FICONSTANTS = "smc/freeimage/ficonstants.c"
 
@@ -338,7 +338,7 @@ def update_ficonstants_c(fname=FICONSTANTS):
         f.write('\n'.join(lines))
 
 if __name__ == "__main__":
-    with open(PXI, "w") as f:
+    with open(PXD, "w") as f:
         f.write(HEADER)
         f.write('\n'.join(enums2cdefs()))
         f.write(FOOTER)

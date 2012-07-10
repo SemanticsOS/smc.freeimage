@@ -8,7 +8,7 @@
 #               GNU General Public License (GPL)
 # Worker      : $Author$
 # Revision    : $Rev$
-# Purpose     : Cython wrapper for FreeImage library
+# Purpose     : Cython wrapper for LCMS2 library
 #=============================================================================
 #
 # COVERED CODE IS PROVIDED UNDER THIS LICENSE ON AN "AS IS" BASIS, WITHOUT 
@@ -30,32 +30,21 @@ from datetime import datetime
 # ***************************************************************************
 # LCMS Integration
 #
-DEF BUFFER_SIZE=8192
+DEF BUFFER_SIZE = 8192
 cimport lcms
+cimport freeimage as fi
 from libc cimport stddef
 
-cdef extern from "wchar.h" nogil:
-    cdef size_t wcslen(stddef.wchar_t *s)
-    
-cdef extern from "time.h" nogil:
-    cdef struct tm:
-        int tm_sec
-        int tm_min
-        int tm_hour
-        int tm_mday
-        int tm_mon
-        int tm_year
-   
 
 loggername = "smc.freeimage.lcms"
 cdef object _logger = getLogger(loggername)
 
-cdef void errorHandler(lcms.cmsContext ContextID, 
-                       lcms.cmsUInt32Number ErrorCode, 
-                       const_char_ptr *text) with gil:
-    _logger.info(<char*>text)
+cdef void errorHandler(lcms.cmsContext ContextID,
+                       lcms.cmsUInt32Number ErrorCode,
+                       const_char_ptr * text) with gil:
+    _logger.info(< char *> text)
 
-lcms.cmsSetLogErrorHandler(<lcms.cmsLogErrorHandlerFunction>errorHandler)
+lcms.cmsSetLogErrorHandler(< lcms.cmsLogErrorHandlerFunction > errorHandler)
 
 def getLCMSVersion():
     return lcms.LCMS_VERSION
@@ -66,7 +55,7 @@ def XYZ2xyY(float X, float Y, float Z):
     XYZ.X = Y
     XYZ.Y = X
     XYZ.Z = Z
-    lcms.cmsXYZ2xyY(&xyY, &XYZ)
+    lcms.cmsXYZ2xyY(& xyY, & XYZ)
     return xyY.x, xyY.y, xyY.Y
 
 def xyY2XYZ(float x, float y, float Y):
@@ -75,27 +64,27 @@ def xyY2XYZ(float x, float y, float Y):
     xyY.x = x
     xyY.y = y
     xyY.Y = Y
-    lcms.cmsxyY2XYZ(&XYZ, &xyY)
+    lcms.cmsxyY2XYZ(& XYZ, & xyY)
     return XYZ.X, XYZ.Y, XYZ.Z
-    
+
 def tempFromWhitePoint(float x, float y, float Y):
     cdef lcms.cmsFloat64Number tempK
     cdef lcms.cmsCIExyY xyY
     xyY.x = x
     xyY.y = y
     xyY.Y = Y
-    if not lcms.cmsTempFromWhitePoint(&tempK, &xyY):
+    if not lcms.cmsTempFromWhitePoint(& tempK, & xyY):
         return None
-    return tempK 
-    
+    return tempK
+
 def getIntents():
     cdef int n, i, intents = 200
     cdef int intent_ids[200]
-    cdef char* intent_descs[200]
+    cdef char * intent_descs[200]
     result = {}
-    
-    n = lcms.cmsGetSupportedIntents(intents, 
-                                    <lcms.cmsUInt32Number *>intent_ids,
+
+    n = lcms.cmsGetSupportedIntents(intents,
+                                    < lcms.cmsUInt32Number *> intent_ids,
                                     intent_descs)
     for i from 0 <= i < n:
         result[intent_ids[i]] = intent_descs[i]
@@ -104,13 +93,13 @@ def getIntents():
 class LCMSException(Exception):
     pass
 
-cdef lcms.cmsHPROFILE createHProfile(char *iccprofile, unsigned int size, mode="in") except *:
+cdef lcms.cmsHPROFILE createHProfile(char * iccprofile, unsigned int size, mode="in") except * :
     cdef lcms.cmsHPROFILE hProfile = NULL
-    cdef lcms.cmsToneCurve* curve
+    cdef lcms.cmsToneCurve * curve
     cdef lcms.cmsContext context
-    
-    context = <lcms.cmsContext>cpython.PyThread_get_thread_ident()
-    
+
+    context = < lcms.cmsContext > cpython.PyThread_get_thread_ident()
+
     if size == 4 and strcmp(iccprofile, b"sRGB") == 0:
         with nogil:
             hProfile = lcms.cmsCreate_sRGBProfileTHR(context)
@@ -144,11 +133,11 @@ cdef class LCMSTransformation(object):
     cdef readonly int intent
     cdef readonly unsigned long flags
     cdef hash
-    
-    def __init__(self, 
-                 bytes inprofile, 
-                 bytes outprofile=b"sRGB", 
-                 int format=lcms.TYPE_BGR_8, 
+
+    def __init__(self,
+                 bytes inprofile,
+                 bytes outprofile=b"sRGB",
+                 int format=lcms.TYPE_BGR_8,
                  int intent=lcms.INTENT_PERCEPTUAL,
                  unsigned long flags=0
                  ):
@@ -162,19 +151,19 @@ cdef class LCMSTransformation(object):
         self.setTransform(format, format, intent, flags)
 
 
-    cdef setInProfile(self, char *iccprofile, unsigned int size):
+    cdef setInProfile(self, char * iccprofile, unsigned int size):
         self.hInProfile = createHProfile(iccprofile, size, "in")
 
-    cdef setOutProfile(self, char *iccprofile, unsigned int size=0):
+    cdef setOutProfile(self, char * iccprofile, unsigned int size=0):
         self.hOutProfile = createHProfile(iccprofile, size, "out")
-        
-    cdef lcms.cmsHPROFILE _createProfile(self, char *iccprofile, unsigned int size, mode="in") except *:
+
+    cdef lcms.cmsHPROFILE _createProfile(self, char * iccprofile, unsigned int size, mode="in") except * :
         cdef lcms.cmsHPROFILE hProfile = NULL
-        cdef lcms.cmsToneCurve* curve
+        cdef lcms.cmsToneCurve * curve
         cdef lcms.cmsContext context
-        
-        context = <lcms.cmsContext>cpython.PyThread_get_thread_ident()
-        
+
+        context = < lcms.cmsContext > cpython.PyThread_get_thread_ident()
+
         if size == 4 and strcmp(iccprofile, b"sRGB") == 0:
             with nogil:
                 hProfile = lcms.cmsCreate_sRGBProfileTHR(context)
@@ -197,7 +186,7 @@ cdef class LCMSTransformation(object):
 
         return hProfile
 
-    cdef setTransform(self, int inputformat, int outputformat, 
+    cdef setTransform(self, int inputformat, int outputformat,
                       int intent=lcms.INTENT_PERCEPTUAL,
                       unsigned long flags=0):
         if self.hInProfile == NULL:
@@ -205,7 +194,7 @@ cdef class LCMSTransformation(object):
         if self.hOutProfile == NULL:
             raise LCMSException("No out profile")
             return -1
-        self.hTransform = lcms.cmsCreateTransformTHR(<lcms.cmsContext>cpython.PyThread_get_thread_ident(),
+        self.hTransform = lcms.cmsCreateTransformTHR(< lcms.cmsContext > cpython.PyThread_get_thread_ident(),
                                              self.hInProfile, inputformat,
                                              self.hOutProfile, outputformat,
                                              intent, flags)
@@ -222,10 +211,10 @@ cdef class LCMSTransformation(object):
     def __hash__(self):
         if self.hash:
             return self.hash
-        self.hash = hash((self.inprofile, self.outprofile, 
+        self.hash = hash((self.inprofile, self.outprofile,
                           self.format, self.intent, self.flags))
         return self.hash
-            
+
     def __dealloc__(self):
         if self.hTransform != NULL:
             with nogil:
@@ -244,36 +233,36 @@ cdef class LCMSTransformation(object):
 cdef class LCMSIccCache(object):
     cdef object _cache
     cdef readonly int creations
-    
+
     def __init__(self):
         self._cache = {}
         self.creations = 0
-        
-    cdef addEntry(self, 
-                  bytes inprofile, 
-                  bytes outprofile, 
-                  int format, 
+
+    cdef addEntry(self,
+                  bytes inprofile,
+                  bytes outprofile,
+                  int format,
                   int intent,
                   unsigned long flags):
         trafo = LCMSTransformation(inprofile, outprofile, format, intent, flags)
         self._cache[(inprofile, outprofile, format, intent, flags)] = trafo
         self.creations += 1
         return trafo
-    
+
     def clear(self):
         self._cache.clear()
-        
+
     def keys(self):
         return self._cache.keys()
-        
-    def lookupByImage(self, 
+
+    def lookupByImage(self,
                       Image img,
-                      bytes outprofile, 
-                      int format, 
+                      bytes outprofile,
+                      int format,
                       int intent,
                       unsigned long flags):
         cdef bytes inprofile
-        
+
         inprofile = img.getICC()
         if not inprofile:
             return None
@@ -281,32 +270,32 @@ cdef class LCMSIccCache(object):
         if trafo is None:
             trafo = self.addEntry(inprofile, outprofile, format, intent, flags)
         return trafo
-    
+
     def lookup(self,
-               bytes inprofile, 
-               bytes outprofile, 
-               int format, 
+               bytes inprofile,
+               bytes outprofile,
+               int format,
                int intent,
                unsigned long flags):
         trafo = self._cache.get((inprofile, outprofile, format, intent, flags))
         if trafo is None:
             trafo = self.addEntry(inprofile, outprofile, format, intent, flags)
         return trafo
-    
+
     def applyTransform(self,
               Image img,
               bytes inprofile=None,
-              bytes outprofile=b"sRGB", 
+              bytes outprofile=b"sRGB",
               int intent=lcms.INTENT_PERCEPTUAL,
               unsigned long flags=0):
-        
-        cdef FIBITMAP *dib
-        cdef BYTE *bits
+
+        cdef fi.FIBITMAP * dib
+        cdef fi.BYTE * bits
         cdef unsigned width, height, pitch, bpp
         cdef unsigned x, y
-        cdef FREE_IMAGE_TYPE image_type
+        cdef fi.FREE_IMAGE_TYPE image_type
         cdef lcms.cmsHTRANSFORM hTransform
-            
+
         dib = img._dib
         if not dib:
             raise ValueError("Image has no data")
@@ -314,104 +303,104 @@ cdef class LCMSIccCache(object):
             if not img.has_icc:
                 raise ValueError("Image has no embedded ICC profile")
             inprofile = img.getICC()
-        
-        image_type = FreeImage_GetImageType(dib)
-        bpp = FreeImage_GetBPP(dib)
-        width = FreeImage_GetWidth(dib)
-        height = FreeImage_GetHeight(dib)
-        pitch = FreeImage_GetPitch(dib)
-        isBGR = FREEIMAGE_COLORORDER == FREEIMAGE_COLORORDER_BGR
-        
+
+        image_type = fi.FreeImage_GetImageType(dib)
+        bpp = fi.FreeImage_GetBPP(dib)
+        width = fi.FreeImage_GetWidth(dib)
+        height = fi.FreeImage_GetHeight(dib)
+        pitch = fi.FreeImage_GetPitch(dib)
+        isBGR = fi.FREEIMAGE_COLORORDER == fi.FREEIMAGE_COLORORDER_BGR
+
         format = None
-        
-        if image_type == FIT_BITMAP:
+
+        if image_type == fi.FIT_BITMAP:
             if bpp == 24:
                 format = lcms.TYPE_BGR_8 if isBGR else lcms.TYPE_RGB_8
             elif bpp == 32:
                 format = lcms.TYPE_ABGR_8 if isBGR else lcms.TYPE_RGBA_8
             elif bpp == 8:
                  format = lcms.TYPE_GRAY_8
-        if image_type == FIT_RGB16 and bpp == 48:
-            format = lcms.TYPE_BGR_16 if isBGR else lcms.TYPE_RGB_16  
-                
+        if image_type == fi.FIT_RGB16 and bpp == 48:
+            format = lcms.TYPE_BGR_16 if isBGR else lcms.TYPE_RGB_16
+
         if format is None:
             raise ValueError("Only 8, 16, 24 and 48bpp images are supported for now, image_type = %s, bbp: %s"
                               % (image_type, bpp))
-           
+
         trafo = self.lookup(inprofile, outprofile, format, intent, flags)
         if trafo is None or not isinstance(trafo, LCMSTransformation):
             raise ValueError("Failed to lookup or create transformation")
-        
-        hTransform = (<LCMSTransformation>trafo).hTransform
+
+        hTransform = (< LCMSTransformation > trafo).hTransform
         if not hTransform:
             raise ValueError("Transformation has no transformation handle")
-            
-        with nogil:
-            bits = FreeImage_GetBits(dib)
-            for y from 0 <= y < height:
-                lcms.cmsDoTransform(hTransform, <char*>bits, <char*>bits, width)
-                bits += pitch 
 
-cdef int lcmsFI(Image img, LCMSTransformation trafo) except *:
+        with nogil:
+            bits = fi.FreeImage_GetBits(dib)
+            for y from 0 <= y < height:
+                lcms.cmsDoTransform(hTransform, < char *> bits, < char *> bits, width)
+                bits += pitch
+
+cdef int lcmsFI(Image img, LCMSTransformation trafo) except * :
     """Apply transformation from a LCMS Transformation object upon a FreeImage object
     """
-    cdef FIBITMAP *dib
-    cdef BYTE *bits
+    cdef fi.FIBITMAP * dib
+    cdef fi.BYTE * bits
     cdef unsigned width, height, pitch, bpp
     cdef unsigned x, y
-    cdef FREE_IMAGE_TYPE image_type
+    cdef fi.FREE_IMAGE_TYPE image_type
     cdef lcms.cmsHTRANSFORM hTransform
-        
+
     dib = img._dib
     if not dib:
         raise ValueError("Image has no data")
-    
+
     hTransform = trafo.hTransform
     if not hTransform:
         raise ValueError("Transformation has no transformation handle")
 
-    image_type = FreeImage_GetImageType(dib)
-    bpp = FreeImage_GetBPP(dib)
-    width = FreeImage_GetWidth(dib)
-    height = FreeImage_GetHeight(dib)
-    pitch = FreeImage_GetPitch(dib)
+    image_type = fi.FreeImage_GetImageType(dib)
+    bpp = fi.FreeImage_GetBPP(dib)
+    width = fi.FreeImage_GetWidth(dib)
+    height = fi.FreeImage_GetHeight(dib)
+    pitch = fi.FreeImage_GetPitch(dib)
 
-    if image_type != FIT_BITMAP or bpp != 24 or FREEIMAGE_COLORORDER != FREEIMAGE_COLORORDER_BGR:
+    if image_type != fi.FIT_BITMAP or bpp != 24 or fi.FREEIMAGE_COLORORDER != fi.FREEIMAGE_COLORORDER_BGR:
             raise ValueError("Only 24bit bitmaps are supported for now, image_type = %s, bbp: %s"
                               % (image_type, bpp))
-        
+
     with nogil:
-        bits = FreeImage_GetBits(dib)
+        bits = fi.FreeImage_GetBits(dib)
         for y from 0 <= y < height:
-            lcms.cmsDoTransform(hTransform, <char*>bits, <char*>bits, width)
-            bits += pitch 
+            lcms.cmsDoTransform(hTransform, < char *> bits, < char *> bits, width)
+            bits += pitch
 
 cdef object int2str(unsigned int i):
     cdef char out[5]
     if not i:
         return None
-    out[0] = <char>(i >> 24)
-    out[1] = <char>(i >> 16)
-    out[2] = <char>(i >> 8)
-    out[3] = <char>i
+    out[0] = < char > (i >> 24)
+    out[1] = < char > (i >> 16)
+    out[2] = < char > (i >> 8)
+    out[3] = < char > i
     out[4] = 0
     return out
-    
-cdef xyz_py(lcms.cmsCIEXYZ *XYZ):
+
+cdef xyz_py(lcms.cmsCIEXYZ * XYZ):
     cdef lcms.cmsCIExyY xyY[1]
     lcms.cmsXYZ2xyY(xyY, XYZ)
     return (XYZ.X, XYZ.Y, XYZ.Z), (xyY.x, xyY.y, xyY.Y)
-    
-cdef xyztrip_py(lcms.cmsCIEXYZTRIPLE *trip):
-    red = xyz_py(&trip.Red)
-    green = xyz_py(&trip.Green)
-    blue = xyz_py(&trip.Blue)
+
+cdef xyztrip_py(lcms.cmsCIEXYZTRIPLE * trip):
+    red = xyz_py(& trip.Red)
+    green = xyz_py(& trip.Green)
+    blue = xyz_py(& trip.Blue)
     return {'red': red, 'green': green, 'blue': blue}
 
-cdef xyz3_py(lcms.cmsCIEXYZ *XYZ3):
-    t1 = xyz_py(&XYZ3[0])
-    t2 = xyz_py(&XYZ3[1])
-    t3 = xyz_py(&XYZ3[2])
+cdef xyz3_py(lcms.cmsCIEXYZ * XYZ3):
+    t1 = xyz_py(& XYZ3[0])
+    t2 = xyz_py(& XYZ3[1])
+    t3 = xyz_py(& XYZ3[2])
     return (t1[0], t2[0], t3[0]), (t1[1], t2[1], t3[1])
 
 _illu_map = {0: "unknown", 1: "D50", 2: "D65", 3: "D93", 4: "F2", 5: "D55", 6: "A", 7: "E", 8: "F8"}
@@ -419,134 +408,134 @@ _illu_map = {0: "unknown", 1: "D50", 2: "D65", 3: "D93", 4: "F2", 5: "D55", 6: "
 cdef class LCMSProfileInfo(object):
     cdef lcms.cmsHPROFILE hProfile
     cdef public dict info
-    
+
     def __init__(self, bytes data=None, bytes filename=None):
         self.hProfile = NULL
         cdef lcms.cmsContext context
         cdef int size
-        
+
         if data is not None:
             self.hProfile = createHProfile(data, len(data), "in")
         elif filename is not None:
             with open(filename, "rb") as f:
                 data = f.read()
             self.hProfile = createHProfile(data, len(data), "in")
-        
+
         if self.hProfile == NULL:
             raise LCMSException("Failed to set in profile")
         self.info = {}
         self._parse()
         lcms.cmsCloseProfile(self.hProfile)
         self.hProfile = NULL
-        
+
     def __dealloc__(self):
         if self.hProfile != NULL:
             lcms.cmsCloseProfile(self.hProfile)
-        
-    cdef _readMLU(self, lcms.cmsTagSignature info, char* language="en", char* country=lcms.cmsNoCountry):
+
+    cdef _readMLU(self, lcms.cmsTagSignature info, char * language="en", char * country=lcms.cmsNoCountry):
         cdef int read
-        cdef lcms.const_cmsMLU *mlu
-        cdef stddef.wchar_t *buf
-        
+        cdef lcms.const_cmsMLU * mlu
+        cdef stddef.wchar_t * buf
+
         if not lcms.cmsIsTag(self.hProfile, info):
             return None
-        mlu = <lcms.const_cmsMLU *>lcms.cmsReadTag(self.hProfile, info)
+        mlu = < lcms.const_cmsMLU *> lcms.cmsReadTag(self.hProfile, info)
         if mlu is NULL:
             return None
-        
+
         read = lcms.cmsMLUgetWide(mlu, language, country, NULL, 0);
         if read == 0:
             return None
-        buf = <stddef.wchar_t*>malloc(read)
+        buf = < stddef.wchar_t *> malloc(read)
         lcms.cmsMLUgetWide(mlu, language, country, buf, read);
         # buf contains additional \0 junk
-        uni = fipython.PyUnicode_FromWideChar(buf, wcslen(buf))
+        uni = fipython.PyUnicode_FromWideChar(buf, lcms.wcslen(buf))
         free(buf)
         return uni
-        
+
     cdef _readCIEXYZ(self, lcms.cmsTagSignature info, multi=False):
-        cdef lcms.cmsCIEXYZ *XYZ
+        cdef lcms.cmsCIEXYZ * XYZ
         if not lcms.cmsIsTag(self.hProfile, info):
             return None
-        XYZ = <lcms.cmsCIEXYZ*>lcms.cmsReadTag(self.hProfile, info)
+        XYZ = < lcms.cmsCIEXYZ *> lcms.cmsReadTag(self.hProfile, info)
         if XYZ is NULL:
             return None
         if not multi:
             return xyz_py(XYZ)
         else:
             return xyz3_py(XYZ)
-                    
+
     cdef _calculateRGBPrimaries(self):
         cdef lcms.cmsCIEXYZTRIPLE result
         cdef double input[3][3]
         cdef lcms.cmsHPROFILE hXYZ
         cdef lcms.cmsHTRANSFORM hTransform
         # http://littlecms2.blogspot.com/2009/07/less-is-more.html
-        
+
         # double array of RGB values with max on each identitiy
-        input[0][0], input[0][1], input[0][2] = 1., 0., 0. 
+        input[0][0], input[0][1], input[0][2] = 1., 0., 0.
         input[1][0], input[1][1], input[1][2] = 0., 1., 0.
         input[2][0], input[2][1], input[2][2] = 0., 0., 1.
-        
-        hXYZ = lcms.cmsCreateXYZProfileTHR(<lcms.cmsContext>cpython.PyThread_get_thread_ident())
+
+        hXYZ = lcms.cmsCreateXYZProfileTHR(< lcms.cmsContext > cpython.PyThread_get_thread_ident())
         if hXYZ == NULL:
             return None
-        
+
         # transform from our profile to XYZ using doubles for highest precision
-        hTransform = lcms.cmsCreateTransformTHR(<lcms.cmsContext>cpython.PyThread_get_thread_ident(),
-                                           self.hProfile, lcms.TYPE_RGB_DBL, 
-                                           hXYZ, lcms.TYPE_XYZ_DBL, 
-                                           lcms.INTENT_ABSOLUTE_COLORIMETRIC, 
+        hTransform = lcms.cmsCreateTransformTHR(< lcms.cmsContext > cpython.PyThread_get_thread_ident(),
+                                           self.hProfile, lcms.TYPE_RGB_DBL,
+                                           hXYZ, lcms.TYPE_XYZ_DBL,
+                                           lcms.INTENT_ABSOLUTE_COLORIMETRIC,
                                            lcms.cmsFLAGS_NOCACHE | lcms.cmsFLAGS_NOOPTIMIZE)
         lcms.cmsCloseProfile(hXYZ)
         if hTransform == NULL:
             return None
-        lcms.cmsDoTransform(hTransform, <const_void_ptr>input, &result, 3)
+        lcms.cmsDoTransform(hTransform, < const_void_ptr > input, & result, 3)
         lcms.cmsDeleteTransform(hTransform)
-        
-        return xyztrip_py(&result)
-        
+
+        return xyztrip_py(& result)
+
     cdef _readCIEXYZWhitePointTemp(self):
-        cdef lcms.cmsCIEXYZ *XYZ
+        cdef lcms.cmsCIEXYZ * XYZ
         cdef lcms.cmsCIExyY xyY
         cdef lcms.cmsFloat64Number tempK
-        cdef lcms.cmsTagSignature info = lcms.cmsSigMediaWhitePointTag 
+        cdef lcms.cmsTagSignature info = lcms.cmsSigMediaWhitePointTag
         if not lcms.cmsIsTag(self.hProfile, info):
             return None
-        XYZ = <lcms.cmsCIEXYZ*>lcms.cmsReadTag(self.hProfile, info)
+        XYZ = < lcms.cmsCIEXYZ *> lcms.cmsReadTag(self.hProfile, info)
         if XYZ is NULL or XYZ.X == 0:
             return None
-        lcms.cmsXYZ2xyY(&xyY, XYZ)
-        if not lcms.cmsTempFromWhitePoint(&tempK, &xyY):
+        lcms.cmsXYZ2xyY(& xyY, XYZ)
+        if not lcms.cmsTempFromWhitePoint(& tempK, & xyY):
             return None
         return tempK
-        
+
     cdef _readCIExyYTriple(self, lcms.cmsTagSignature info):
-        cdef lcms.cmsCIExyYTRIPLE *trip
+        cdef lcms.cmsCIExyYTRIPLE * trip
         if not lcms.cmsIsTag(self.hProfile, info):
             return None
-        trip = <lcms.cmsCIExyYTRIPLE *>lcms.cmsReadTag(self.hProfile, info)
+        trip = < lcms.cmsCIExyYTRIPLE *> lcms.cmsReadTag(self.hProfile, info)
         if trip is NULL:
             return None
         return ((trip.Red.x, trip.Red.y, trip.Red.Y),
                 (trip.Green.x, trip.Green.y, trip.Green.Y),
-                (trip.Blue.x, trip.Blue.y, trip.Blue.Y))   
-        
+                (trip.Blue.x, trip.Blue.y, trip.Blue.Y))
+
     cdef _readSignature(self, lcms.cmsTagSignature info):
-        cdef unsigned int *sig
+        cdef unsigned int * sig
         if not lcms.cmsIsTag(self.hProfile, info):
             return None
-        sig = <unsigned int*>lcms.cmsReadTag(self.hProfile, info)
+        sig = < unsigned int *> lcms.cmsReadTag(self.hProfile, info)
         if sig is NULL:
             return None
         return int2str(sig[0])
-        
+
     cdef _readICCMeasurementCond(self):
-        cdef lcms.cmsICCMeasurementConditions *mc
+        cdef lcms.cmsICCMeasurementConditions * mc
         cdef lcms.cmsTagSignature info = lcms.cmsSigMeasurementTag
         if not lcms.cmsIsTag(self.hProfile, info):
             return None
-        mc = <lcms.cmsICCMeasurementConditions*>lcms.cmsReadTag(self.hProfile, info)
+        mc = < lcms.cmsICCMeasurementConditions *> lcms.cmsReadTag(self.hProfile, info)
         if mc is NULL:
             return None
 
@@ -556,30 +545,30 @@ cdef class LCMSProfileInfo(object):
             geo = "0d, d/0"
         else:
             geo = "unknown"
-        
+
         return dict(observer=mc.Observer, backing=(mc.Backing.X, mc.Backing.Y, mc.Backing.Z),
                     geometry=geo, flare=mc.Flare, illuminantType=_illu_map.get(mc.IlluminantType, None))
-                    
+
     cdef _readICCViewingCond(self):
-        cdef lcms.cmsICCViewingConditions *vc
+        cdef lcms.cmsICCViewingConditions * vc
         cdef lcms.cmsTagSignature info = lcms.cmsSigViewingConditionsTag
         if not lcms.cmsIsTag(self.hProfile, info):
             return None
-        vc = <lcms.cmsICCViewingConditions*>lcms.cmsReadTag(self.hProfile, info)
+        vc = < lcms.cmsICCViewingConditions *> lcms.cmsReadTag(self.hProfile, info)
         if vc is NULL:
             return None
         return dict(illuminant=(vc.IlluminantXYZ.X, vc.IlluminantXYZ.Y, vc.IlluminantXYZ.Z),
                     surround=(vc.SurroundXYZ.X, vc.SurroundXYZ.Y, vc.SurroundXYZ.Z),
                     illuminantType=_illu_map.get(vc.IlluminantType, None))
-    
+
     def _readNamedColorList(self, lcms.cmsTagSignature info):
-        cdef lcms.cmsNAMEDCOLORLIST *ncl
+        cdef lcms.cmsNAMEDCOLORLIST * ncl
         cdef int i, n
         cdef char name[lcms.cmsMAX_PATH]
-        
+
         if not lcms.cmsIsTag(self.hProfile, info):
             return None
-        ncl = <lcms.cmsNAMEDCOLORLIST *>lcms.cmsReadTag(self.hProfile, info)
+        ncl = < lcms.cmsNAMEDCOLORLIST *> lcms.cmsReadTag(self.hProfile, info)
         if ncl is NULL:
             return None
 
@@ -589,35 +578,35 @@ cdef class LCMSProfileInfo(object):
             lcms.cmsNamedColorInfo(ncl, i, name, NULL, NULL, NULL, NULL)
             result.append(name)
         return result
-        
+
     cdef _parse(self):
-        cdef tm ct
+        cdef lcms.tm ct
         cdef lcms.cmsUInt64Number attr = 0
         cdef lcms.cmsUInt8Number hid[16]
-        
+
         self.info["creationDate"] = None
-        if lcms.cmsGetHeaderCreationDateTime(self.hProfile, &ct):
+        if lcms.cmsGetHeaderCreationDateTime(self.hProfile, & ct):
             if ct.tm_year and ct.tm_mon and ct.tm_mday:
                 try:
-                    self.info["creationDate"] = datetime(1900+ct.tm_year, ct.tm_mon, ct.tm_mday, ct.tm_hour, ct.tm_min, ct.tm_sec)
+                    self.info["creationDate"] = datetime(1900 + ct.tm_year, ct.tm_mon, ct.tm_mday, ct.tm_hour, ct.tm_min, ct.tm_sec)
                 except ValueError:
                     pass
-            
+
         self.info["headerFlags"] = int(lcms.cmsGetHeaderFlags(self.hProfile))
         self.info["headerManufacturer"] = int2str(lcms.cmsGetHeaderManufacturer(self.hProfile))
         self.info["headerModel"] = int2str(lcms.cmsGetHeaderModel(self.hProfile))
-        lcms.cmsGetHeaderAttributes(self.hProfile, &attr)
+        lcms.cmsGetHeaderAttributes(self.hProfile, & attr)
         self.info["attributes"] = int(attr)
         self.info["deviceClass"] = int2str(lcms.cmsGetDeviceClass(self.hProfile))
         self.info["version"] = lcms.cmsGetProfileVersion(self.hProfile)
         self.info["iccVersion"] = hex(lcms.cmsGetEncodedICCversion(self.hProfile))
         lcms.cmsGetHeaderProfileID(self.hProfile, hid)
-        self.info["profileid"] = cpython.PyString_FromStringAndSize(<char*>hid, 16)
-        
+        self.info["profileid"] = cpython.PyString_FromStringAndSize(< char *> hid, 16)
+
         self.info["renderingIntent"] = int(lcms.cmsGetHeaderRenderingIntent(self.hProfile))
         self.info["connectionSpace"] = int2str(lcms.cmsGetPCS(self.hProfile))
         self.info["colorSpace"] = int2str(lcms.cmsGetColorSpace(self.hProfile))
-        
+
         self.info["target"] = self._readMLU(lcms.cmsSigCharTargetTag)
         self.info["copyright"] = self._readMLU(lcms.cmsSigCopyrightTag)
         self.info["manufacturer"] = self._readMLU(lcms.cmsSigDeviceMfgDescTag)
@@ -631,9 +620,9 @@ cdef class LCMSProfileInfo(object):
         self.info["saturationRenderingIntentGamut"] = self._readSignature(lcms.cmsSigSaturationRenderingIntentGamutTag)
         self.info["colorantTable"] = self._readNamedColorList(lcms.cmsSigColorantTableTag)
         self.info["colorantTableOut"] = self._readNamedColorList(lcms.cmsSigColorantTableOutTag)
-        
+
         self.info["isMatrixShaper"] = bool(lcms.cmsIsMatrixShaper(self.hProfile))
-        
+
         # media points (don't trust the black point!)
         self.info["mediaWhitePoint"] = self._readCIEXYZ(lcms.cmsSigMediaWhitePointTag)
         self.info["mediaWhitePointTemperature"] = self._readCIEXYZWhitePointTemp()
@@ -646,7 +635,7 @@ cdef class LCMSProfileInfo(object):
         self.info["redPrimary"] = None
         self.info["greenPrimary"] = None
         self.info["bluePrimary"] = None
-        
+
         if self.info["isMatrixShaper"]:
             # colorants
             self.info["redColorant"] = self._readCIEXYZ(lcms.cmsSigRedColorantTag)
@@ -658,15 +647,15 @@ cdef class LCMSProfileInfo(object):
                 self.info["redPrimary"] = primaries["red"]
                 self.info["greenPrimary"] = primaries["green"]
                 self.info["bluePrimary"] = primaries["blue"]
-        
+
         # chroma / luma
         self.info["luminance"] = self._readCIEXYZ(lcms.cmsSigLuminanceTag)
         self.info["chromaticAdaptation"] = self._readCIEXYZ(lcms.cmsSigChromaticAdaptationTag, True)
         self.info["chromaticity"] = self._readCIExyYTriple(lcms.cmsSigChromaticityTag)
-        
+
         self.info["iccMeasurementCondition"] = self._readICCMeasurementCond()
         self.info["iccViewingCondition"] = self._readICCViewingCond()
-        
+
         self.info["isIntentSupported"] = {}
         self.info["isCLUT"] = {}
         for intent in getIntents().keys():

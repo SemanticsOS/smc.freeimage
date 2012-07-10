@@ -53,7 +53,7 @@ sdist: egg_info
 	$(PYTHON) setup.py sdist
  
 pxd:  
-	$(PYTHON) fi2pxi.py
+	$(PYTHON) fi2pxd.py
 	$(PYTHON) lcms2pxd.py
 
 benchmark: inplace

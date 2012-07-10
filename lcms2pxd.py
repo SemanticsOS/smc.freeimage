@@ -38,6 +38,20 @@ ENUM = "smc/freeimage/enums.py"
 LCMSCONSTANTS = "smc/freeimage/lcmsconstants.c"
 
 HEADER = """
+from libc cimport stddef
+
+cdef extern from "wchar.h" nogil:
+    cdef size_t wcslen(stddef.wchar_t * s)
+
+cdef extern from "time.h" nogil:
+    cdef struct tm:
+        int tm_sec
+        int tm_min
+        int tm_hour
+        int tm_mday
+        int tm_mon
+        int tm_year
+
 cdef extern from *:
     ctypedef char* const_char_ptr "const char*"
     ctypedef char const_char "const char"
@@ -315,10 +329,10 @@ cdef extern from "lcms2.h" nogil:
     cdef void* cmsReadTag(cmsHPROFILE hProfile, unsigned int sig)
     cdef cmsUInt32Number cmsGetProfileInfo(cmsHPROFILE hProfile, cmsTagSignature Info, 
                                            const_char LanguageCode[3], const_char CountryCode[3],
-                                           wchar_t* Buffer, cmsUInt32Number BufferSize)
+                                           stddef.wchar_t* Buffer, cmsUInt32Number BufferSize)
     cdef cmsUInt32Number cmsMLUgetWide(const_cmsMLU* mlu,   
                                        const_char LanguageCode[3], const_char CountryCode[3], 
-                                       wchar_t* Buffer, cmsUInt32Number BufferSize)
+                                       stddef.wchar_t* Buffer, cmsUInt32Number BufferSize)
     
     cdef cmsUInt32Number cmsGetSupportedIntents(cmsUInt32Number nMax, cmsUInt32Number* Codes, char** Descriptions)
     cdef cmsBool cmsIsIntentSupported(cmsHPROFILE hProfile, cmsUInt32Number Intent, int UsedDirection)

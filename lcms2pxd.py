@@ -9,7 +9,7 @@
 #               GNU General Public License (GPL)
 # Worker      : $Author$
 # Revision    : $Rev$
-# Purpose     : Create PXI file from lcms.h and local definitions
+# Purpose     : Create PXD file from lcms.h and local definitions
 #=============================================================================
 #
 # COVERED CODE IS PROVIDED UNDER THIS LICENSE ON AN "AS IS" BASIS, WITHOUT 
@@ -33,7 +33,7 @@ LCMS_H = "windows/lcms2.h"
 #DEFINITION = re.compile("DLL_API (.*)DLL_CALLCONV ([A-Za-z_0-9]*)\((.*)\)")
 DEFINE_TYPE = re.compile("#define ((TYPE|cmsFLAGS|cmsERROR|INTENT|LCMS_USED)_[A-Za-z0-9_]*)[ \t]")
 
-PXI = "smc/freeimage/lcms.pxi"
+PXD = "smc/freeimage/lcms.pxd"
 ENUM = "smc/freeimage/enums.py"
 LCMSCONSTANTS = "smc/freeimage/lcmsconstants.c"
 
@@ -370,7 +370,7 @@ def update_lcmsconstants_c(fname):
         f.write('\n'.join(lines))
 
 if __name__ == "__main__":
-    with open(PXI, "w") as f:
+    with open(PXD, "w") as f:
         f.write(HEADER)
         f.write('\n'.join(parse(LCMS_H)))
         f.write('\n')

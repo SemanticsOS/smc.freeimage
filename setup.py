@@ -69,8 +69,8 @@ def findlib(libname, library_dirs=None, **kwargs):
 
 if iswindows:
     fi_ext_extras = dict(
-        include_dirs=["./win32"] if not is64 else ["./winx64"],
-        library_dirs=["./win32"] if not is64 else ["./winx64"],
+        include_dirs=["windows"],
+        library_dirs=["windows/x86"] if not is64 else ["windows/x86_64"],
         libraries=["lcms2", "user32"], # "freeimage" later
         define_macros=[("CMS_DLL", "1")],
         extra_link_args=["/NODEFAULTLIB:libcmt"]
@@ -138,9 +138,11 @@ setup_info = dict(
     author_email="c.heimes@semantics.de",
     maintainer="Christian Heimes",
     maintainer_email="c.heimes@semantics.de",
-    url="http://www.semantics.de",
+    url="https://bitbucket.org/tiran/smc.freeimage",
     keywords="freeimage lcms image jpeg tiff png pil icc",
     license="FIPL or GPL",
+    description="Python wrapper for FreeImage and LCMS2 libraries",
+    long_description=open("README.txt").read(),
     classifiers=(
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
@@ -159,11 +161,11 @@ setup_info = dict(
 
 if iswindows:
     if is64:
-        shutil.copy("winx64/FreeImage.dll", "smc/freeimage/")
-        shutil.copy("winx64/lcms2.dll", "smc/freeimage/")
+        shutil.copy("windows/x86_64/FreeImage.dll", "smc/freeimage/")
+        shutil.copy("windows/x86_64/lcms2.dll", "smc/freeimage/")
     else:
-        shutil.copy("win32/FreeImage.dll", "smc/freeimage/")
-        shutil.copy("win32/lcms2.dll", "smc/freeimage/")
+        shutil.copy("windows/x86/FreeImage.dll", "smc/freeimage/")
+        shutil.copy("windows/x86/lcms2.dll", "smc/freeimage/")
     pd = setup_info.setdefault("package_data", {})
     pd_sf = pd.setdefault("smc.freeimage", [])
     pd_sf.append("FreeImage.dll")

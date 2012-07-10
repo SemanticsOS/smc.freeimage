@@ -29,7 +29,7 @@
 from __future__ import with_statement
 import re
 
-LCMS_H = "win32/lcms2.h"
+LCMS_H = "windows/lcms2.h"
 #DEFINITION = re.compile("DLL_API (.*)DLL_CALLCONV ([A-Za-z_0-9]*)\((.*)\)")
 DEFINE_TYPE = re.compile("#define ((TYPE|cmsFLAGS|cmsERROR|INTENT|LCMS_USED)_[A-Za-z0-9_]*)[ \t]")
 

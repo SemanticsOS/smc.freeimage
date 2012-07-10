@@ -1,5 +1,6 @@
 build
 dist
+
 smc/freeimage/_freeimage.so
 smc/freeimage/ficonstants.so
 smc/freeimage/lcmsconstants.so
@@ -9,3 +10,10 @@ smc/freeimage/lcmsconstants.pyd
 smc/freeimage/_freeimage.dylib
 smc/freeimage/ficonstants.dylib
 smc/freeimage/lcmsconstants.dylib
+
+syntax: glob
+*.swp
+*.o
+*.pyc
+*.pyo
+

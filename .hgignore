@@ -1,6 +1,11 @@
 build
 dist
 
+.settings
+
+docs/_static/empty
+docs/_templates/empty
+
 smc/freeimage/_freeimage.so
 smc/freeimage/ficonstants.so
 smc/freeimage/lcmsconstants.so

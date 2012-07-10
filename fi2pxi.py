@@ -27,7 +27,7 @@
 """
 import re
 
-FREEIMAGE_H = "windowns/FreeImage.h"
+FREEIMAGE_H = "windows/FreeImage.h"
 DEFINITION = re.compile("DLL_API (.*)DLL_CALLCONV ([A-Za-z_0-9]*)\((.*)\)")
 FI_DEFAULT = re.compile(" FI_DEFAULT\(.*?\)")
 

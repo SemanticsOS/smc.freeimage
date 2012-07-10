@@ -41,7 +41,7 @@ cdef object _logger = getLogger(loggername)
 
 cdef void errorHandler(lcms.cmsContext ContextID,
                        lcms.cmsUInt32Number ErrorCode,
-                       const_char_ptr * text) with gil:
+                       fi.const_char_ptr * text) with gil:
     _logger.info(< char *> text)
 
 lcms.cmsSetLogErrorHandler(< lcms.cmsLogErrorHandlerFunction > errorHandler)
@@ -490,7 +490,7 @@ cdef class LCMSProfileInfo(object):
         lcms.cmsCloseProfile(hXYZ)
         if hTransform == NULL:
             return None
-        lcms.cmsDoTransform(hTransform, < const_void_ptr > input, & result, 3)
+        lcms.cmsDoTransform(hTransform, < fi.const_void_ptr > input, & result, 3)
         lcms.cmsDeleteTransform(hTransform)
 
         return xyztrip_py(& result)

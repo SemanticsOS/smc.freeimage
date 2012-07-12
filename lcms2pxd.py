@@ -31,7 +31,8 @@ import re
 
 LCMS_H = "windows/lcms2.h"
 #DEFINITION = re.compile("DLL_API (.*)DLL_CALLCONV ([A-Za-z_0-9]*)\((.*)\)")
-DEFINE_TYPE = re.compile("#define ((TYPE|cmsFLAGS|cmsERROR|INTENT|LCMS_USED)_[A-Za-z0-9_]*)[ \t]")
+DEFINE_TYPE = re.compile("#define ((TYPE|cmsFLAGS|cmsERROR|INTENT|LCMS_USED|lcmsSignature)[A-Za-z0-9_]*)[ \t]")
+CMSSIG = re.compile("\ {8}((cmsSig|cmsInfo)[A-Za-z0-9_]*)")
 
 PXD = "smc/freeimage/lcms.pxd"
 ENUM = "smc/freeimage/enums.py"
@@ -74,54 +75,54 @@ cdef extern from "lcms2.h" nogil:
     ctypedef unsigned char cmsUInt8Number
     ctypedef cmsUInt32Number cmsSignature
     ctypedef long cmsInt32Number
-    
+
     cdef struct cmsMLU:
         pass
     ctypedef cmsMLU const_cmsMLU "const cmsMLU"
-    
+
     ctypedef struct cmsNAMEDCOLORLIST:
         pass
-        
+
     ctypedef struct cmsCIEXYZ:
         cmsFloat64Number X
         cmsFloat64Number Y
         cmsFloat64Number Z
-        
+
     ctypedef struct cmsCIExyY:
         cmsFloat64Number x
         cmsFloat64Number y
         cmsFloat64Number Y
-        
+
     ctypedef struct cmsCIELab:
         cmsFloat64Number L
         cmsFloat64Number a
         cmsFloat64Number b
-        
+
     ctypedef struct cmsCIEXYZTRIPLE:
         cmsCIEXYZ Red
         cmsCIEXYZ Green
         cmsCIEXYZ Blue
-    
+
     ctypedef struct cmsCIExyYTRIPLE:
         cmsCIExyY Red
         cmsCIExyY Green
         cmsCIExyY Blue
-        
+
     ctypedef struct cmsICCMeasurementConditions:
         cmsUInt32Number  Observer # 0 = unknown, 1=CIE 1931, 2=CIE 1964
         cmsCIEXYZ        Backing # Value of backing
         cmsUInt32Number  Geometry # 0=unknown, 1=45/0, 0/45 2=0d, d/0
         cmsFloat64Number Flare # 0..1.0
         cmsUInt32Number  IlluminantType
-        
+
     ctypedef struct cmsICCViewingConditions:
         cmsCIEXYZ IlluminantXYZ
         cmsCIEXYZ SurroundXYZ
         cmsUInt32Number IlluminantType
-        
+
     ctypedef struct cmsToneCurve:
         pass
-    
+
     # enums
     ctypedef enum cmsProfileClassSignature:
         cmsSigInputClass 
@@ -131,7 +132,7 @@ cdef extern from "lcms2.h" nogil:
         cmsSigAbstractClass
         cmsSigColorSpaceClass
         cmsSigNamedColorClass
-        
+
     ctypedef enum cmsColorSpaceSignature:
         cmsSigXYZData # XYZ 
         cmsSigLabData # Lab 
@@ -176,7 +177,45 @@ cdef extern from "lcms2.h" nogil:
         cmsSig14colorData # ECLR
         cmsSig15colorData # FCLR
         cmsSigLuvKData # LuvK
-        
+
+    ctypedef enum cmsTagTypeSignature:
+        cmsSigChromaticityType # chrm
+        cmsSigColorantOrderType # clro
+        cmsSigColorantTableType # clrt
+        cmsSigCrdInfoType # crdi
+        cmsSigCurveType # curv
+        cmsSigDataType # data
+        cmsSigDictType # dict
+        cmsSigDateTimeType # dtim
+        cmsSigDeviceSettingsType # devs
+        cmsSigLut16Type # mft2
+        cmsSigLut8Type # mft1
+        cmsSigLutAtoBType # mAB 
+        cmsSigLutBtoAType # mBA 
+        cmsSigMeasurementType # meas
+        cmsSigMultiLocalizedUnicodeType # mluc
+        cmsSigMultiProcessElementType # mpet
+        cmsSigNamedColorType # ncol -- DEPRECATED!
+        cmsSigNamedColor2Type # ncl2
+        cmsSigParametricCurveType # para
+        cmsSigProfileSequenceDescType # pseq
+        cmsSigProfileSequenceIdType # psid
+        cmsSigResponseCurveSet16Type # rcs2
+        cmsSigS15Fixed16ArrayType # sf32
+        cmsSigScreeningType # scrn
+        cmsSigSignatureType # sig 
+        cmsSigTextType # text
+        cmsSigTextDescriptionType # desc
+        cmsSigU16Fixed16ArrayType # uf32
+        cmsSigUcrBgType # bfd 
+        cmsSigUInt16ArrayType # ui16
+        cmsSigUInt32ArrayType # ui32
+        cmsSigUInt64ArrayType # ui64
+        cmsSigUInt8ArrayType # ui08 
+        cmsSigVcgtType # vcgt
+        cmsSigViewingConditionsType # view
+        cmsSigXYZType # XYZ 
+
     ctypedef enum cmsTagSignature:
         cmsSigAToB0Tag # A2B0 
         cmsSigAToB1Tag # A2B1
@@ -246,25 +285,81 @@ cdef extern from "lcms2.h" nogil:
         cmsSigViewingCondDescTag # vued
         cmsSigViewingConditionsTag # view
         cmsSigVcgtTag # vcgt
-        
+        cmsSigMetaTag # meta
+
+    ctypedef enum cmsInfoType:
+        cmsSigDigitalCamera # dcam
+        cmsSigFilmScanner # fscn
+        cmsSigReflectiveScanner # rscn
+        cmsSigInkJetPrinter # ijet
+        cmsSigThermalWaxPrinter # twax
+        cmsSigElectrophotographicPrinter # epho
+        cmsSigElectrostaticPrinter # esta
+        cmsSigDyeSublimationPrinter # dsub
+        cmsSigPhotographicPaperPrinter # rpho
+        cmsSigFilmWriter # fprn
+        cmsSigVideoMonitor # vidm
+        cmsSigVideoCamera # vidc
+        cmsSigProjectionTelevision # pjtv
+        cmsSigCRTDisplay # CRT 
+        cmsSigPMDisplay # PMD 
+        cmsSigAMDisplay # AMD 
+        cmsSigPhotoCD # KPCD
+        cmsSigPhotoImageSetter # imgs
+        cmsSigGravure # grav
+        cmsSigOffsetLithography # offs
+        cmsSigSilkscreen # silk
+        cmsSigFlexography # flex
+        cmsSigMotionPictureFilmScanner # mpfs
+        cmsSigMotionPictureFilmRecorder # mpfr
+        cmsSigDigitalMotionPictureCamera # dmpc
+        cmsSigDigitalCinemaProjector # dcpj
+
+    ctypedef enum cmsPlatformSignature:
+        cmsSigMacintosh # APPL
+        cmsSigMicrosoft # MSFT
+        cmsSigSolaris # SUNW
+        cmsSigSGI # SGI 
+        cmsSigTaligent # TGNT
+        cmsSigUnices # *nix
+
+    ctypedef enum cmsStageSignature:
+        cmsSigCurveSetElemType # cvst
+        cmsSigMatrixElemType # matf
+        cmsSigCLutElemType # clut
+        cmsSigBAcsElemType # bACS
+        cmsSigEAcsElemType # eACS
+        #Custom from here, not in the ICC Spec
+        cmsSigXYZ2LabElemType # l2x 
+        cmsSigLab2XYZElemType # x2l 
+        cmsSigNamedColorElemType # ncl 
+        cmsSigLabV2toV4 # 2 4 
+        cmsSigLabV4toV2 # 4 2 
+        # Identities
+        cmsSigIdentityElemType # idn 
+
+    ctypedef enum cmsCurveSegSignature:
+        cmsSigFormulaCurveSeg # parf
+        cmsSigSampledCurveSeg # samf
+        cmsSigSegmentedCurve # curf
 
     ctypedef enum cmsInfoType:
         cmsInfoDescription
         cmsInfoManufacturer
         cmsInfoModel
         cmsInfoCopyright
-        
+
     # constants
     const_char_ptr cmsNoCountry
     cdef enum:
         cmsMAX_PATH
         LCMS_VERSION
-    
+
     # profiles
     cdef cmsHPROFILE cmsOpenProfileFromFileTHR(cmsContext ContextID, const_char_ptr ICCProfile, const_char_ptr sAccess)
     cdef cmsHPROFILE cmsOpenProfileFromMemTHR(cmsContext ContextID, const_char_ptr MemPtr, cmsUInt32Number dwSize)
     cdef cmsBool cmsCloseProfile(cmsHPROFILE hProfile)
-    
+
     #cdef cmsHPROFILE cmsCreateRGBProfile(LPcmsCIExyY WhitePoint,
     #                                     LPcmsCIExyYTRIPLE Primaries,
     #                                     LPGAMMATABLE TransferFunction[3])
@@ -307,10 +402,10 @@ cdef extern from "lcms2.h" nogil:
                              const_void_ptr InputBuffer,
                              void* OutputBuffer, 
                              cmsUInt32Number Size)
-    
+
     ctypedef void (*cmsLogErrorHandlerFunction)(cmsContext ContextID, cmsUInt32Number ErrorCode, const_char_ptr Text)
     cdef void cmsSetLogErrorHandler(cmsLogErrorHandlerFunction Fn)
-    
+
     # introspection
     cdef cmsBool cmsGetHeaderCreationDateTime(cmsHPROFILE hProfile, tm *Dest)
     cdef cmsUInt32Number cmsGetHeaderFlags(cmsHPROFILE hProfile)
@@ -322,7 +417,7 @@ cdef extern from "lcms2.h" nogil:
     cdef cmsUInt32Number cmsGetEncodedICCversion(cmsHPROFILE hProfile)
     cdef void cmsGetHeaderProfileID(cmsHPROFILE hProfile, cmsUInt8Number* ProfileID)
     cdef cmsUInt32Number cmsGetHeaderRenderingIntent(cmsHPROFILE hProfile)
-    
+
     cdef cmsInt32Number cmsGetTagCount(cmsHPROFILE hProfile)
     cdef cmsTagSignature cmsGetTagSignature(cmsHPROFILE hProfile, cmsUInt32Number n)
     cdef cmsBool cmsIsTag(cmsHPROFILE hProfile, unsigned int sig)
@@ -333,18 +428,18 @@ cdef extern from "lcms2.h" nogil:
     cdef cmsUInt32Number cmsMLUgetWide(const_cmsMLU* mlu,   
                                        const_char LanguageCode[3], const_char CountryCode[3], 
                                        stddef.wchar_t* Buffer, cmsUInt32Number BufferSize)
-    
+
     cdef cmsUInt32Number cmsGetSupportedIntents(cmsUInt32Number nMax, cmsUInt32Number* Codes, char** Descriptions)
     cdef cmsBool cmsIsIntentSupported(cmsHPROFILE hProfile, cmsUInt32Number Intent, int UsedDirection)
     cdef cmsBool cmsIsMatrixShaper(cmsHPROFILE hProfile)
     cdef cmsBool cmsIsCLUT(cmsHPROFILE hProfile, cmsUInt32Number Intent, int UsedDirection)
     cdef cmsColorSpaceSignature cmsGetPCS(cmsHPROFILE hProfile)
     cdef cmsColorSpaceSignature cmsGetColorSpace(cmsHPROFILE hProfile)
-    
+
     cdef void cmsXYZ2xyY(cmsCIExyY* Dest, cmsCIEXYZ* Source)
     cdef void cmsxyY2XYZ(cmsCIEXYZ* Dest, cmsCIExyY* Source)
     cdef cmsBool cmsTempFromWhitePoint(cmsFloat64Number* TempK, cmsCIExyY* WhitePoint)
-    
+
     cdef cmsUInt32Number cmsNamedColorCount(cmsNAMEDCOLORLIST* v)
     cdef cmsBool cmsNamedColorInfo(cmsNAMEDCOLORLIST* NamedColorList, cmsUInt32Number nColor, 
                                    char* Name, char* Prefix, char* Suffix,
@@ -378,14 +473,21 @@ def update_lcmsconstants_c(fname):
                 break
     for typ in CONSTANTS:
         lines.append('    PyModule_AddIntConstant(m, "%s", %s);' %
+                     (typ, typ))
+    for line in HEADER.split("\n"):
+        mo = CMSSIG.search(line)
+        if mo is not None:
+            typ = mo.group(1).strip()
+            lines.append('    PyModule_AddIntConstant(m, "%s", %s);' %
                          (typ, typ))
     lines.append('}\n\n')
     with open(fname, 'w') as f:
         f.write('\n'.join(lines))
 
 if __name__ == "__main__":
+    parsed = parse(LCMS_H)
     with open(PXD, "w") as f:
         f.write(HEADER)
-        f.write('\n'.join(parse(LCMS_H)))
+        f.write('\n'.join(parsed))
         f.write('\n')
     update_lcmsconstants_c(LCMSCONSTANTS)

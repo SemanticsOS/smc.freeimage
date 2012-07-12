@@ -113,18 +113,18 @@ DEF ERR_UNSUP = -2
 DEF ERR_CLOSED = -3
 
 _META_MODELS = {
-    "fi.FIMD_NODATA" : fi.FIMD_NODATA,
-    "fi.FIMD_COMMENTS" : fi.FIMD_COMMENTS,
-    "fi.FIMD_EXIF_MAIN" : fi.FIMD_EXIF_MAIN,
-    "fi.FIMD_EXIF_EXIF" : fi.FIMD_EXIF_EXIF,
-    "fi.FIMD_EXIF_GPS" : fi.FIMD_EXIF_GPS,
-    "fi.FIMD_EXIF_MAKERNOTE" : fi.FIMD_EXIF_MAKERNOTE,
-    "fi.FIMD_EXIF_INTEROP" : fi.FIMD_EXIF_INTEROP,
-    "fi.FIMD_IPTC" : fi.FIMD_IPTC,
-    "fi.FIMD_XMP" : fi.FIMD_XMP,
-    "fi.FIMD_GEOTIFF" : fi.FIMD_GEOTIFF,
-    "fi.FIMD_ANIMATION" : fi.FIMD_ANIMATION,
-    "fi.FIMD_CUSTOM" : fi.FIMD_CUSTOM,
+    "FIMD_NODATA" : fi.FIMD_NODATA,
+    "FIMD_COMMENTS" : fi.FIMD_COMMENTS,
+    "FIMD_EXIF_MAIN" : fi.FIMD_EXIF_MAIN,
+    "FIMD_EXIF_EXIF" : fi.FIMD_EXIF_EXIF,
+    "FIMD_EXIF_GPS" : fi.FIMD_EXIF_GPS,
+    "FIMD_EXIF_MAKERNOTE" : fi.FIMD_EXIF_MAKERNOTE,
+    "FIMD_EXIF_INTEROP" : fi.FIMD_EXIF_INTEROP,
+    "FIMD_IPTC" : fi.FIMD_IPTC,
+    "FIMD_XMP" : fi.FIMD_XMP,
+    "FIMD_GEOTIFF" : fi.FIMD_GEOTIFF,
+    "FIMD_ANIMATION" : fi.FIMD_ANIMATION,
+    "FIMD_CUSTOM" : fi.FIMD_CUSTOM,
     }
 
 _COLOR_TYPE_NAMES = {
@@ -1276,7 +1276,7 @@ cdef class Image:
         if not self.has_icc:
             return None
         return cpython.PyString_FromStringAndSize(<char *>self._icc.data,
-                                                 self._icc.size)
+                                                  self._icc.size)
                                                  
     #def setICC(self, str profile):
     #    """setICC()

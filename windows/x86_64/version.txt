@@ -1,3 +1,4 @@
-freeimage:
-lcms2:
+compiler: VS 2008
+freeimage: 
+lcms2: 2.3
 

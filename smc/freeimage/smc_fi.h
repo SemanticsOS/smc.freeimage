@@ -27,6 +27,7 @@
 #define SMC_FI_CONST_H
 
 #include "FreeImage.h"
+#include "Python.h"
 
 #if !defined(FREEIMAGE_TURBO) || !FREEIMAGE_TURBO
     #define FREEIMAGE_TURBO 0
@@ -37,6 +38,7 @@
 
 typedef FIBITMAP* (DLL_CALLCONV *FI_ConvertFunction)(FIBITMAP *dib);
 
+// LCMS2 definitions
 #ifndef _MSC_VER
 
 #define LCMS_WIN_TYPES_ALREADY_DEFINED

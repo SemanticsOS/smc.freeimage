@@ -1,23 +1,7 @@
 
 from libc cimport stddef
+cimport smc_fi
 
-cdef extern from "wchar.h" nogil:
-    cdef size_t wcslen(stddef.wchar_t * s)
-
-cdef extern from "time.h" nogil:
-    cdef struct tm:
-        int tm_sec
-        int tm_min
-        int tm_hour
-        int tm_mday
-        int tm_mon
-        int tm_year
-
-cdef extern from *:
-    ctypedef char* const_char_ptr "const char*"
-    ctypedef char const_char "const char"
-    ctypedef void* const_void_ptr "const void*"
-    ctypedef struct const_struct "const struct"
 
 cdef extern from "lcms2.h" nogil:
 
@@ -310,14 +294,14 @@ cdef extern from "lcms2.h" nogil:
         cmsInfoCopyright
 
     # constants
-    const_char_ptr cmsNoCountry
+    smc_fi.const_char_ptr cmsNoCountry
     cdef enum:
         cmsMAX_PATH
         LCMS_VERSION
 
     # profiles
-    cdef cmsHPROFILE cmsOpenProfileFromFileTHR(cmsContext ContextID, const_char_ptr ICCProfile, const_char_ptr sAccess)
-    cdef cmsHPROFILE cmsOpenProfileFromMemTHR(cmsContext ContextID, const_char_ptr MemPtr, cmsUInt32Number dwSize)
+    cdef cmsHPROFILE cmsOpenProfileFromFileTHR(cmsContext ContextID, smc_fi.const_char_ptr ICCProfile, smc_fi.const_char_ptr sAccess)
+    cdef cmsHPROFILE cmsOpenProfileFromMemTHR(cmsContext ContextID, smc_fi.const_char_ptr MemPtr, cmsUInt32Number dwSize)
     cdef cmsBool cmsCloseProfile(cmsHPROFILE hProfile)
 
     #cdef cmsHPROFILE cmsCreateRGBProfile(LPcmsCIExyY WhitePoint,
@@ -359,15 +343,15 @@ cdef extern from "lcms2.h" nogil:
                                           cmsUInt32Number dwFlags)
     cdef void cmsDeleteTransform(cmsHTRANSFORM hTransform)
     cdef void cmsDoTransform(cmsHTRANSFORM hTransform,
-                             const_void_ptr InputBuffer,
+                             smc_fi.const_void_ptr InputBuffer,
                              void* OutputBuffer, 
                              cmsUInt32Number Size)
 
-    ctypedef void (*cmsLogErrorHandlerFunction)(cmsContext ContextID, cmsUInt32Number ErrorCode, const_char_ptr Text)
+    ctypedef void (*cmsLogErrorHandlerFunction)(cmsContext ContextID, cmsUInt32Number ErrorCode, smc_fi.const_char_ptr Text)
     cdef void cmsSetLogErrorHandler(cmsLogErrorHandlerFunction Fn)
 
     # introspection
-    cdef cmsBool cmsGetHeaderCreationDateTime(cmsHPROFILE hProfile, tm *Dest)
+    cdef cmsBool cmsGetHeaderCreationDateTime(cmsHPROFILE hProfile, smc_fi.tm *Dest)
     cdef cmsUInt32Number cmsGetHeaderFlags(cmsHPROFILE hProfile)
     cdef cmsUInt32Number cmsGetHeaderManufacturer(cmsHPROFILE hProfile)
     cdef cmsUInt32Number cmsGetHeaderModel(cmsHPROFILE hProfile)
@@ -383,10 +367,10 @@ cdef extern from "lcms2.h" nogil:
     cdef cmsBool cmsIsTag(cmsHPROFILE hProfile, unsigned int sig)
     cdef void* cmsReadTag(cmsHPROFILE hProfile, unsigned int sig)
     cdef cmsUInt32Number cmsGetProfileInfo(cmsHPROFILE hProfile, cmsTagSignature Info, 
-                                           const_char LanguageCode[3], const_char CountryCode[3],
+                                           smc_fi.const_char LanguageCode[3], smc_fi.const_char CountryCode[3],
                                            stddef.wchar_t* Buffer, cmsUInt32Number BufferSize)
     cdef cmsUInt32Number cmsMLUgetWide(const_cmsMLU* mlu,   
-                                       const_char LanguageCode[3], const_char CountryCode[3], 
+                                       smc_fi.const_char LanguageCode[3], smc_fi.const_char CountryCode[3], 
                                        stddef.wchar_t* Buffer, cmsUInt32Number BufferSize)
 
     cdef cmsUInt32Number cmsGetSupportedIntents(cmsUInt32Number nMax, cmsUInt32Number* Codes, char** Descriptions)

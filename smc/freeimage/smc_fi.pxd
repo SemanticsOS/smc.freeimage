@@ -22,13 +22,36 @@
 # THIS LICENSE. NO USE OF ANY COVERED CODE IS AUTHORIZED HEREUNDER EXCEPT UNDER
 # THIS DISCLAIMER.
 #
+
+from libc cimport stddef
+
 cdef extern from "wchar.h" nogil:
-    ctypedef char wchar_t
+    cdef size_t wcslen(stddef.wchar_t * s)
+
+cdef extern from "time.h" nogil:
+    cdef struct tm:
+        int tm_sec
+        int tm_min
+        int tm_hour
+        int tm_mday
+        int tm_mon
+        int tm_year
+
+cdef extern from "inttypes.h":
+    ctypedef long int32_t
+    ctypedef unsigned short uint8_t
+    ctypedef unsigned int uint16_t
+    ctypedef unsigned long uint32_t
+
+cdef extern from *:
+    ctypedef char* const_char_ptr "const char*"
+    ctypedef char const_char "const char"
+    ctypedef void* const_void_ptr "const void*"
+    ctypedef struct const_struct "const struct"
 
 cdef extern from "Python.h":
     # unicode
-    object PyUnicode_FromWideChar(wchar_t *w, Py_ssize_t size)
-    
+    object PyUnicode_FromWideChar(stddef.wchar_t *w, Py_ssize_t size)
     # buffer
-    int                 PyObject_AsReadBuffer           (object, void **, Py_ssize_t *)    except -1
-    
+    int PyObject_AsReadBuffer (object, void **, Py_ssize_t *) except -1
+

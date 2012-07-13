@@ -41,7 +41,7 @@ cdef object _logger = getLogger(loggername)
 
 cdef void errorHandler(lcms.cmsContext ContextID,
                        lcms.cmsUInt32Number ErrorCode,
-                       fi.const_char_ptr * text) with gil:
+                       smc_fi.const_char_ptr * text) with gil:
     _logger.info(< char *> text)
 
 lcms.cmsSetLogErrorHandler(< lcms.cmsLogErrorHandlerFunction > errorHandler)
@@ -449,7 +449,7 @@ cdef class LCMSProfileInfo(object):
         buf = < stddef.wchar_t *> malloc(read)
         lcms.cmsMLUgetWide(mlu, language, country, buf, read);
         # buf contains additional \0 junk
-        uni = fipython.PyUnicode_FromWideChar(buf, lcms.wcslen(buf))
+        uni = fipython.PyUnicode_FromWideChar(buf, smc_fi.wcslen(buf))
         free(buf)
         return uni
 
@@ -490,7 +490,7 @@ cdef class LCMSProfileInfo(object):
         lcms.cmsCloseProfile(hXYZ)
         if hTransform == NULL:
             return None
-        lcms.cmsDoTransform(hTransform, < fi.const_void_ptr > input, & result, 3)
+        lcms.cmsDoTransform(hTransform, < smc_fi.const_void_ptr > input, & result, 3)
         lcms.cmsDeleteTransform(hTransform)
 
         return xyztrip_py(& result)
@@ -580,7 +580,7 @@ cdef class LCMSProfileInfo(object):
         return result
 
     cdef _parse(self):
-        cdef lcms.tm ct
+        cdef smc_fi.tm ct
         cdef lcms.cmsUInt64Number attr = 0
         cdef lcms.cmsUInt8Number hid[16]
 
@@ -601,7 +601,7 @@ cdef class LCMSProfileInfo(object):
         self.info["version"] = lcms.cmsGetProfileVersion(self.hProfile)
         self.info["iccVersion"] = hex(lcms.cmsGetEncodedICCversion(self.hProfile))
         lcms.cmsGetHeaderProfileID(self.hProfile, hid)
-        self.info["profileid"] = cpython.PyString_FromStringAndSize(< char *> hid, 16)
+        self.info["profileid"] = cpython.PyBytes_FromStringAndSize(< char *> hid, 16)
 
         self.info["renderingIntent"] = int(lcms.cmsGetHeaderRenderingIntent(self.hProfile))
         self.info["connectionSpace"] = int2str(lcms.cmsGetPCS(self.hProfile))

@@ -28,6 +28,7 @@
 cimport cpython
 cimport fipython
 cimport freeimage as fi
+cimport smc_fi
 from libc cimport stdio
 
 import sys as _sys
@@ -63,8 +64,8 @@ cdef extern from "errno.h" nogil:
 
 cdef extern from "FreeImage.h":
     # WITH GIL!
-    ctypedef void (*FreeImage_OutputMessageFunction)(fi.FREE_IMAGE_FORMAT, fi.const_char_ptr )
-    cdef void FreeImage_SetOutputMessage(void (*)(fi.FREE_IMAGE_FORMAT, fi.const_char_ptr ))
+    ctypedef void (*FreeImage_OutputMessageFunction)(fi.FREE_IMAGE_FORMAT, smc_fi.const_char_ptr )
+    cdef void FreeImage_SetOutputMessage(void (*)(fi.FREE_IMAGE_FORMAT, smc_fi.const_char_ptr ))
 
 cdef extern from "smc_fi.h" nogil:
     ctypedef fi.FIBITMAP* (*FI_ConvertFunction)(fi.FIBITMAP *dib)
@@ -169,7 +170,7 @@ cdef void clearError():
         cpython.PyThread_delete_key_value(tls_key)
 
     
-cdef void setError(fi.FREE_IMAGE_FORMAT format, fi.const_char_ptr msg):
+cdef void setError(fi.FREE_IMAGE_FORMAT format, smc_fi.const_char_ptr msg):
     cdef SmcFiError *error
     
     # clear error first, otherwise I can't set a new value
@@ -472,10 +473,10 @@ cdef class _MemoryIO:
         cdef Py_ssize_t size
         
         # Access raw data though the FI memory io API and Python buffer API
-        # Data is copied exactly ONE time in PyString_FromStringAndSize. 
+        # Data is copied exactly ONE time in PyBytes_FromStringAndSize. 
         # Neither the buffer API nor the MemoryIO API copies the data. 
-        fipython.PyObject_AsReadBuffer(self, <fi.const_void_ptr *>&buf, &size)
-        return cpython.PyString_FromStringAndSize(buf, size)
+        fipython.PyObject_AsReadBuffer(self, <smc_fi.const_void_ptr *>&buf, &size)
+        return cpython.PyBytes_FromStringAndSize(buf, size)
 
     property format:
         def __get__(self):
@@ -520,13 +521,13 @@ cdef class _MemoryIO:
             rsize = self.size - pos
         
         # allocate buffer
-        result = cpython.PyString_FromStringAndSize(NULL, rsize)
-        buf = cpython.PyString_AsString(result)
+        result = cpython.PyBytes_FromStringAndSize(NULL, rsize)
+        buf = cpython.PyBytes_AsString(result)
         # ATTENTION! I'm using a nasty but useful trick here.
-        # The pay load (obsval) of a PyString object is (ab)used as target
-        # buffer. PyString_FromStringAndSize() with NULL as first arguments
+        # The pay load (obsval) of a PyBytes object is (ab)used as target
+        # buffer. PyBytes_FromStringAndSize() with NULL as first arguments
         # allocates the space for the data segment but doesn't initialize it.
-        # PyString_AsString() gives direct access to the pay load. FI_ReadMemory
+        # PyBytes_AsString() gives direct access to the pay load. FI_ReadMemory
         # stores the image data directly into the string and thus avoids another
         # copy operation. 
         amount = fi.FreeImage_ReadMemory(buf, <unsigned>rsize, 1, self._mem)
@@ -679,7 +680,7 @@ cdef class Image:
         cdef fi.BYTE *buffer
         cdef fi.FIMEMORY *mem
         
-        fipython.PyObject_AsReadBuffer(obj, <fi.const_void_ptr *>&buffer, &size)
+        fipython.PyObject_AsReadBuffer(obj, <smc_fi.const_void_ptr *>&buffer, &size)
         mem = fi.FreeImage_OpenMemory(buffer, size)
         if mem == NULL:
             raise dispatchFIError(FreeImageMemoryError, "fi.FreeImage_OpenMemory() has failed")
@@ -1275,7 +1276,7 @@ cdef class Image:
         cdef fi.FIICCPROFILE* icc
         if not self.has_icc:
             return None
-        return cpython.PyString_FromStringAndSize(<char *>self._icc.data,
+        return cpython.PyBytes_FromStringAndSize(<char *>self._icc.data,
                                                   self._icc.size)
                                                  
     #def setICC(self, str profile):
@@ -1283,7 +1284,7 @@ cdef class Image:
     #    
     #    Set ICC profile as byte string
     #    """
-    #    cdef char *cp = cpython.PyString_AsString(profile)
+    #    cdef char *cp = cpython.PyBytes_AsString(profile)
     #    self._icc = fi.FreeImage_CreateICCProfile(self._dib, <char*>cp, len(profile))
 
                                                  

@@ -1,28 +1,19 @@
 
-cdef extern from *:
-    ctypedef char* const_char_ptr "const char*"
-    ctypedef void* const_void_ptr "const void*"
-    
-cdef extern from "inttypes.h":
-    ctypedef long int32_t
-    ctypedef unsigned short uint8_t
-    ctypedef unsigned int uint16_t
-    ctypedef unsigned long uint32_t
+from libc cimport stddef
+cimport smc_fi
 
-#cdef extern from "wchar.h":
-#    ctypedef char wchar_t
 
 cdef extern from "FreeImage.h" nogil:
-    ctypedef int32_t BOOL
-    ctypedef uint8_t BYTE
-    ctypedef uint16_t WORD
-    ctypedef uint32_t DWORD
-    ctypedef int32_t LONG
-    
+    ctypedef smc_fi.int32_t BOOL
+    ctypedef smc_fi.uint8_t BYTE
+    ctypedef smc_fi.uint16_t WORD
+    ctypedef smc_fi.uint32_t DWORD
+    ctypedef smc_fi.int32_t LONG
+
     # structs
     ctypedef struct FIBITMAP:
         void *data
-    
+
     ctypedef struct FIMULTIBITMAP:
         void *data
 
@@ -31,7 +22,7 @@ cdef extern from "FreeImage.h" nogil:
         BYTE rgbGreen
         BYTE rgbRed
         BYTE rgbReserved
-    
+
     ctypedef struct RGBTRIPLE:
         BYTE rgbBlue
         BYTE rgbGreen
@@ -49,51 +40,51 @@ cdef extern from "FreeImage.h" nogil:
         LONG  biYPelsPerMeter 
         DWORD biClrUsed 
         DWORD biClrImportant
-  
+
     ctypedef struct BITMAPINFO:
         BITMAPINFOHEADER bmiHeader 
         RGBQUAD          bmiColors[1]
-        
+
     ctypedef struct FIRGB16:
         WORD red
         WORD green
         WORD blue
-    
+
     ctypedef struct FIRGBA16:
         WORD red
         WORD green
         WORD blue
         WORD alpha
-    
+
     ctypedef struct FIRGBF:
         float red
         float green
         float blue
-    
+
     ctypedef struct FIRGBAF:
         float red
         float green
         float blue
         float alpha
-    
+
     ctypedef struct FIRCOMPLEX:
         double r
         double i
-    
+
     ctypedef struct FIICCPROFILE:
         WORD  flags
         DWORD size
         void  *data
-    
+
     ctypedef struct FIMETADATA:
         void *data
-    
+
     ctypedef struct FITAG:
         void *data
 
     cdef struct FIMEMORY:
         void *data
-    
+
     # ********************
     # image io
     ctypedef void* fi_handle
@@ -398,7 +389,7 @@ cdef extern from "FreeImage.h" nogil:
         pass
 
     ctypedef void (*FI_InitProc)(Plugin *plugin, int format_id)
-    ctypedef void (*FreeImage_OutputMessageFunctionStdCall) (FREE_IMAGE_FORMAT fif, const_char_ptr msg)
+    ctypedef void (*FreeImage_OutputMessageFunctionStdCall) (FREE_IMAGE_FORMAT fif, smc_fi.const_char_ptr msg)
     
     cdef void  FreeImage_Initialise(BOOL load_local_plugins_only)
     cdef void  FreeImage_DeInitialise()

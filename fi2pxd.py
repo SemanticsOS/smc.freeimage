@@ -26,6 +26,7 @@
 """Create freeimage.pxi from header file
 """
 import re
+import io
 
 FREEIMAGE_H = "windows/FreeImage.h"
 DEFINITION = re.compile("DLL_API (.*)DLL_CALLCONV ([A-Za-z_0-9]*)\((.*)\)")
@@ -263,7 +264,8 @@ SKIP = set(("FreeImage_SetOutputMessage",))
 
 def parse(fname):
     lines = []
-    with open(fname) as f:
+    # FreeImage.h contains latin-1 chars
+    with io.open(fname, errors="ignore") as f:
         for line in f:
             mo = DEFINITION.search(line)
             if mo is None:
@@ -314,7 +316,7 @@ def enums2cdefs():
 
 def update_ficonstants_c(fname=FICONSTANTS):
     lines = []
-    with open(fname) as f:
+    with io.open(fname) as f:
         for line in f:
             lines.append(line.rstrip())
             if 'MARKER' in line:
@@ -328,16 +330,16 @@ def update_ficonstants_c(fname=FICONSTANTS):
     lines.append("    return m;")
     lines.append("#endif")
     lines.append('}\n')
-    with open(fname, 'w') as f:
+    with io.open(fname, 'w') as f:
         f.write('\n'.join(lines))
 
 if __name__ == "__main__":
-    with open(PXD, "w") as f:
+    with io.open(PXD, "w") as f:
         f.write(HEADER)
         f.write('\n'.join(enums2cdefs()))
         f.write(FOOTER)
         f.write('\n'.join(parse(FREEIMAGE_H)))
         f.write('\n')
-    with open(ENUM, "w") as f:
+    with io.open(ENUM, "w") as f:
         f.write('\n'.join(enums2classes()))
     update_ficonstants_c()

@@ -25,9 +25,8 @@
 #
 """Create lcms.pxi from header file
 """
-
-from __future__ import with_statement
 import re
+import io
 
 LCMS_H = "windows/lcms2.h"
 #DEFINITION = re.compile("DLL_API (.*)DLL_CALLCONV ([A-Za-z_0-9]*)\((.*)\)")
@@ -435,7 +434,7 @@ CONSTANTS = []
 
 def parse(fname):
     lines = []
-    with open(fname) as f:
+    with io.open(fname) as f:
         for line in f:
             mo = DEFINE_TYPE.search(line)
             if mo is not None:
@@ -450,7 +449,7 @@ def parse(fname):
 
 def update_lcmsconstants_c(fname):
     lines = []
-    with open(fname) as f:
+    with io.open(fname) as f:
         for line in f:
             lines.append(line.rstrip())
             if 'MARKER' in line:
@@ -468,12 +467,12 @@ def update_lcmsconstants_c(fname):
     lines.append("    return m;")
     lines.append("#endif")
     lines.append('}\n')
-    with open(fname, 'w') as f:
+    with io.open(fname, 'w') as f:
         f.write('\n'.join(lines))
 
 if __name__ == "__main__":
     parsed = parse(LCMS_H)
-    with open(PXD, "w") as f:
+    with io.open(PXD, "w") as f:
         f.write(HEADER)
         f.write('\n'.join(parsed))
         f.write('\n')

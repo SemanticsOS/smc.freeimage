@@ -457,7 +457,7 @@ class TestImage(TestImageBase):
                "test180.jpg": (FI_JPEG_OPERATION.FIJPEG_OP_ROTATE_180, h, w),
                "test270.jpg": (FI_JPEG_OPERATION.FIJPEG_OP_ROTATE_270, w, h),
                }
-        for dst, (op, w, h) in map.iteritems():
+        for dst, (op, w, h) in map.items():
             fname = os.path.join(self.tmpdir, dst)
             jpegTransform(IMG, fname , op)
             self.assert_(os.path.isfile(fname))
@@ -503,12 +503,12 @@ class TestMetadata(TestImageBase):
 
     def _check_metadata_img(self, img, **kw):
         meta = img.getMetadata()
-        for k, v in kw.iteritems():
+        for k, v in kw.items():
             meta.setdefault(k, {}).update(v)
         self.assertEqual(meta, {})
 
         count = img.getMetadataCount()
-        for k, v in kw.iteritems():
+        for k, v in kw.items():
             count.setdefault(k, 0) + len(v)
         self.assertEqual(count,
             {'FIMD_EXIF_MAIN': 0,
@@ -527,8 +527,8 @@ class TestMetadata(TestImageBase):
 
     def _check_metadata_tiff(self, tiff, **kw):
         meta = tiff.getMetadata()
-        for k, v in kw.iteritems():
-            for k2, v2 in v.iteritems():
+        for k, v in kw.items():
+            for k2, v2 in v.items():
                 if v2 is None:
                     meta[k].pop(k2, None)
                 else:
@@ -561,8 +561,8 @@ class TestMetadata(TestImageBase):
             )
 
         count = tiff.getMetadataCount()
-        for k, v in kw.iteritems():
-            for k2, v2 in v.iteritems():
+        for k, v in kw.items():
+            for k2, v2 in v.items():
                 if v2 is None:
                     count[k] -= 1
 
@@ -583,8 +583,8 @@ class TestMetadata(TestImageBase):
 
     def _check_metadata_tiff2(self, tiff2, **kw):
         meta = tiff2.getMetadata()
-        for k, v in kw.iteritems():
-            for k2, v2 in v.iteritems():
+        for k, v in kw.items():
+            for k2, v2 in v.items():
                 if v2 is None:
                     meta[k].pop(k2, None)
                 else:
@@ -624,8 +624,8 @@ class TestMetadata(TestImageBase):
             )
 
         count = tiff2.getMetadataCount()
-        for k, v in kw.iteritems():
-            for k2, v2 in v.iteritems():
+        for k, v in kw.items():
+            for k2, v2 in v.items():
                 if v2 is None:
                     count[k] -= 1
 

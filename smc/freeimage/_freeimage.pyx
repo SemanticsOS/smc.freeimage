@@ -29,6 +29,9 @@ cimport cpython
 cimport freeimage as fi
 cimport smc_fi
 from libc cimport stdio
+from libc cimport stdlib
+from libc cimport string
+
 
 import sys as _sys
 from logging import getLogger
@@ -48,16 +51,6 @@ __all__ = (
 cdef class Image
 cdef class FormatInfo
 
-cdef extern from "stdlib.h" nogil:
-    cdef int strcmp(char*, char*)
-    cdef int strncpy(char*, char*, unsigned int)
-    cdef int strlen(char*)
-    cdef void* malloc(unsigned int)
-    cdef void free(void*)
-
-cdef extern from "unistd.h" nogil:
-    int dup(int oldfd)
-
 cdef extern from "errno.h" nogil:
     int errno
 
@@ -69,6 +62,29 @@ cdef extern from "FreeImage.h":
 cdef extern from "smc_fi.h" nogil:
     ctypedef fi.FIBITMAP* (*FI_ConvertFunction)(fi.FIBITMAP *dib)
     int FREEIMAGE_TURBO
+
+cdef object funicode(smc_fi.const_char_ptr s):
+    """Unicode helper from lxml's apihelpers.pxi
+    """
+    cdef Py_ssize_t slen
+    cdef char* spos
+    cdef bint is_non_ascii
+    if smc_fi.IS_PYTHON3:
+        slen = string.strlen(s)
+        return s[:slen].decode('UTF-8')
+    spos = s
+    is_non_ascii = 0
+    while spos[0] != c'\0':
+        if spos[0] & 0x80:
+            is_non_ascii = 1
+            break
+        spos += 1
+    while spos[0] != c'\0':
+        spos += 1
+    slen = spos - s
+    if is_non_ascii:
+        return s[:slen].decode('UTF-8')
+    return <bytes>s[:slen]
 
 # LCMS integration
 IF 1:
@@ -164,8 +180,8 @@ cdef void clearError():
     if old != NULL:
         # must free() value first, it's not freed by delete_key_value()
         if old.msg != NULL:
-            free(old.msg)
-        free(old)
+            stdlib.free(old.msg)
+        stdlib.free(old)
         cpython.PyThread_delete_key_value(tls_key)
 
 
@@ -175,18 +191,18 @@ cdef void setError(fi.FREE_IMAGE_FORMAT format, smc_fi.const_char_ptr msg):
     # clear error first, otherwise I can't set a new value
     clearError()
 
-    error = <SmcFiError*>malloc(sizeof(SmcFiError))
+    error = <SmcFiError*>stdlib.malloc(sizeof(SmcFiError))
     if error == NULL:
         # error but can't report it here :/
         return
 
-    error.msglen = strlen(msg)
+    error.msglen = string.strlen(msg)
     error.format = format
-    error.msg = <char*>malloc((error.msglen+1) * sizeof(char))
+    error.msg = <char*>stdlib.malloc((error.msglen+1) * sizeof(char))
     if error.msg == NULL:
-        free(error)
+        stdlib.free(error)
         return
-    strncpy(error.msg, msg, error.msglen)
+    string.strncpy(error.msg, msg, error.msglen)
     error.msg[error.msglen] = 0 # terminate string
 
     cpython.PyThread_set_key_value(tls_key, <void*>error)
@@ -229,7 +245,7 @@ def dispatchFIError(cls, *args):
     err = getError()
     if err != NULL:
         fimsg = str(err)
-        free(err)
+        stdlib.free(err)
         err = NULL
     else:
         fimsg = None
@@ -632,10 +648,10 @@ cdef class Image:
 
     def __init__(self, char* filename="", buffer=None, _DibWrapper _bitmap = None,
                  int fd=-2, int flags = 0):
-        if (bool(strlen(filename)) + bool(_bitmap is not None) + 
+        if (bool(string.strlen(filename)) + bool(_bitmap is not None) + 
             bool(buffer is not None) + bool(fd != -2)) != 1:
             raise ValueError("Exactly one argument must be applied")
-        if strlen(filename):
+        if string.strlen(filename):
             self.from_filename(filename, flags)
         if buffer:
             self.from_buffer(buffer, flags)
@@ -786,7 +802,7 @@ cdef class Image:
         mimetype of the image, e.g. image/jpeg
         """
         def __get__(self):
-            return fi.FreeImage_GetFIFMimeType(self._format)
+            return funicode(fi.FreeImage_GetFIFMimeType(self._format))
 
     property dpi_x:
         """dpi_x -> int
@@ -1724,19 +1740,19 @@ cdef class FormatInfo:
 
     property mimetype:
         def __get__(self):
-            return fi.FreeImage_GetFIFMimeType(self._format)
+            return funicode(fi.FreeImage_GetFIFMimeType(self._format))
 
     property name:
         def __get__(self):
-            return fi.FreeImage_GetFormatFromFIF(self._format)
+            return funicode(fi.FreeImage_GetFormatFromFIF(self._format))
 
     property description:
         def __get__(self):
-            return fi.FreeImage_GetFIFDescription(self._format)
+            return funicode(fi.FreeImage_GetFIFDescription(self._format))
 
     property magic_reg_expr:
         def __get__(self):
-            return fi.FreeImage_GetFIFRegExpr(self._format)
+            return funicode(fi.FreeImage_GetFIFRegExpr(self._format))
 
     property supports_reading:
         def __get__(self):
@@ -1762,10 +1778,10 @@ cdef class FormatInfo:
         if type < 0 or type > fi.FIT_RGBAF:
             raise ValueError("Invalid type %i" % type)
         return fi.FreeImage_FIFSupportsExportType(self._format, 
-                                               <fi.FREE_IMAGE_TYPE>type)            
+                                                  <fi.FREE_IMAGE_TYPE>type)
 
     def getSupportsExportBPP(self, int bpp):
-        return fi.FreeImage_FIFSupportsExportBPP(self._format, bpp)            
+        return fi.FreeImage_FIFSupportsExportBPP(self._format, bpp)
 
 
 #--- module functions
@@ -1774,7 +1790,7 @@ def getVersion():
 
     Get version of loaded freeimage library
     """
-    return fi.FreeImage_GetVersion()
+    return funicode(fi.FreeImage_GetVersion())
 
 def getCompiledFor():
     """getCompiledFor() -> tuple(major, minor, serial)
@@ -1786,7 +1802,7 @@ def getCompiledFor():
 def getCopyright():
     """getCopyright() -> str
     """
-    return fi.FreeImage_GetCopyrightMessage()
+    return funicode(fi.FreeImage_GetCopyrightMessage())
 
 def getFormatCount():
     """getFormatCount() -> int

@@ -29,6 +29,12 @@
 #include "FreeImage.h"
 #include "Python.h"
 
+#if PY_VERSION_HEX >= 0x03000000
+#  define IS_PYTHON3 1
+#else
+#  define IS_PYTHON3 0
+#endif
+
 #if !defined(FREEIMAGE_TURBO) || !FREEIMAGE_TURBO
     #define FREEIMAGE_TURBO 0
 #else

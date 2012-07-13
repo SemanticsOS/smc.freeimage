@@ -53,7 +53,7 @@ class TestEnums(unittest2.TestCase):
     def test_attrs(self):
         for cname in ENUMS:
             cls = getattr(enums, cname)
-            for name, value in cls.__dict__.iteritems():
+            for name, value in cls.__dict__.items():
                 if name.startswith("_"):
                     continue
                 self.assert_(name[0].isupper(), name)

@@ -34,6 +34,8 @@ DEF BUFFER_SIZE = 8192
 cimport lcms
 cimport freeimage as fi
 from libc cimport stddef
+from libc cimport stdlib
+from libc cimport string
 
 
 loggername = "smc.freeimage.lcms"
@@ -100,13 +102,13 @@ cdef lcms.cmsHPROFILE createHProfile(char * iccprofile, unsigned int size, mode=
 
     context = < lcms.cmsContext > cpython.PyThread_get_thread_ident()
 
-    if size == 4 and strcmp(iccprofile, b"sRGB") == 0:
+    if size == 4 and string.strcmp(iccprofile, b"sRGB") == 0:
         with nogil:
             hProfile = lcms.cmsCreate_sRGBProfileTHR(context)
         if hProfile == NULL:
             raise LCMSException("Failed to create sRGB %s profile" % mode)
             return NULL
-    elif size == 4 and strcmp(iccprofile, b"gray") == 0:
+    elif size == 4 and string.strcmp(iccprofile, b"gray") == 0:
         with nogil:
             curve = lcms.cmsBuildGamma(context, 1.0)
             hProfile = lcms.cmsCreateGrayProfileTHR(context, lcms.cmsD50_xyY(), curve)
@@ -164,13 +166,13 @@ cdef class LCMSTransformation(object):
 
         context = < lcms.cmsContext > cpython.PyThread_get_thread_ident()
 
-        if size == 4 and strcmp(iccprofile, b"sRGB") == 0:
+        if size == 4 and string.strcmp(iccprofile, b"sRGB") == 0:
             with nogil:
                 hProfile = lcms.cmsCreate_sRGBProfileTHR(context)
             if hProfile == NULL:
                 raise LCMSException("Failed to create sRGB %s profile" % mode)
                 return NULL
-        elif size == 4 and strcmp(iccprofile, b"gray") == 0:
+        elif size == 4 and string.strcmp(iccprofile, b"gray") == 0:
             with nogil:
                 curve = lcms.cmsBuildGamma(context, 1.0)
                 hProfile = lcms.cmsCreateGrayProfileTHR(context, lcms.cmsD50_xyY(), curve)
@@ -446,11 +448,11 @@ cdef class LCMSProfileInfo(object):
         read = lcms.cmsMLUgetWide(mlu, language, country, NULL, 0);
         if read == 0:
             return None
-        buf = < stddef.wchar_t *> malloc(read)
+        buf = < stddef.wchar_t *> stdlib.malloc(read)
         lcms.cmsMLUgetWide(mlu, language, country, buf, read);
         # buf contains additional \0 junk
         uni = smc_fi.PyUnicode_FromWideChar(buf, smc_fi.wcslen(buf))
-        free(buf)
+        stdlib.free(buf)
         return uni
 
     cdef _readCIEXYZ(self, lcms.cmsTagSignature info, multi=False):

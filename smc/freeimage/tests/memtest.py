@@ -65,7 +65,7 @@ def win32_status(): # pragma: no cover
     info = {}
     hProcess = win32api.GetCurrentProcess()
     pmi = win32process.GetProcessMemoryInfo(hProcess)
-    for key, value in pmi.iteritems():
+    for key, value in pmi.items():
         if key != "PageFaultCount":
             # values in bytes
             value = value / (1024.0 ** 2)

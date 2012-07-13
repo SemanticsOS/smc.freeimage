@@ -86,15 +86,6 @@ class TestImageBase(unittest2.TestCase):
             self._biton = Image(BITON)
         return self._biton
 
-class TestImage(TestImageBase):
-    @owner("c.heimes")
-    def test00imagebase(self):
-        self.assert_(isinstance(self.img, Image))
-        self.assert_(isinstance(self.tiff, Image))
-        self.assert_(isinstance(self.biton, Image))
-        for name in self.image_names:
-            self.assert_(isinstance(getattr(self, name), Image))
-
     def _test_jpeg(self, img):
         self.assertEqual(img.format, FI_FORMAT.FIF_JPEG)
         self.assertEqual(img.width, 1210)
@@ -121,6 +112,16 @@ class TestImage(TestImageBase):
         self.assertGreater(sys.getsizeof(img), size)
         self.assertLess(sys.getsizeof(img), size + 1024)
         self.assert_(repr(img))
+
+
+class TestImage(TestImageBase):
+    @owner("c.heimes")
+    def test00imagebase(self):
+        self.assert_(isinstance(self.img, Image))
+        self.assert_(isinstance(self.tiff, Image))
+        self.assert_(isinstance(self.biton, Image))
+        for name in self.image_names:
+            self.assert_(isinstance(getattr(self, name), Image))
 
     @owner("c.heimes")
     def test_open(self):
@@ -271,85 +272,6 @@ class TestImage(TestImageBase):
         img.save(j2k_file, format=FI_FORMAT.FIF_J2K)
 
     @owner("c.heimes")
-    def test_toBuffer(self):
-        for i in range(10):
-            imgbuf = self.img.toBuffer()
-        self.assertEqual(imgbuf.format, FI_FORMAT.FIF_JPEG)
-        expected = 366202 if hasJPEGTurbo() else 366043
-        self.assertEqual(imgbuf.size, expected)
-        self.assertEqual(len(bytes(imgbuf)), expected)
-        with Image(buffer=imgbuf) as newimg:
-            self._test_jpeg(newimg)
-
-    @owner("c.heimes")
-    def test_toBuffer_file(self):
-        #if sys.platform == 'win32':
-        #    size = 366548
-        size = 366202 if hasJPEGTurbo() else 366043
-
-        imgbuf = self.img.toBuffer()
-        self.assertEqual(imgbuf.format, FI_FORMAT.FIF_JPEG)
-        self.assertEqual(imgbuf.tell(), 0)
-        imgbuf.seek(0, 2)
-        self.assertEqual(imgbuf.tell(), size)
-        imgbuf.seek(0)
-
-        self.assertEqual(imgbuf.tell(), 0)
-        self.assertEqual(imgbuf.read(11), b'\xff\xd8\xff\xe0\x00\x10JFIF\x00')
-        imgbuf.seek(0)
-
-        self.assertEqual(len(imgbuf.read()), size)
-        self.assertEqual(imgbuf.read(), b"")
-        imgbuf.seek(0)
-
-        self.assertEqual(len(imgbuf.read(size + 10)), size)
-
-        imgbuf = self.img.toBuffer(format=fi.FIF_PNG)
-        self.assertEqual(imgbuf.format, fi.FIF_PNG)
-        self.assertEqual(imgbuf.read(4), b'\x89PNG')
-
-    @owner("c.heimes")
-    def test_toBuffer_PIL(self):
-        try:
-            from PIL.Image import open as pil_open
-        except ImportError:
-            return
-        imgbuf = self.img.toBuffer()
-        pilimg = pil_open(imgbuf)
-        self.assertEqual(pilimg.format, 'JPEG')
-        self.assertEqual(pilimg.size, self.img.size)
-        del pilimg
-
-        pilimg = self.img.toPIL(format=fi.FIF_PNG)
-        self.assertEqual(pilimg.format, 'PNG')
-        del pilimg
-
-    @owner("c.heimes")
-    def test_buffer_keepref(self):
-        imgbuf1 = self.img.toBuffer()
-        imgbuf2 = self.img.toBuffer()
-
-        try:
-            self.img.close()
-        except OperationError:
-            exc = sys.exc_info()[1]
-            self.assertEqual(exc.args, ("Image is still access from 2 buffers.",))
-        else:
-            self.fail("An OperationError was expected")
-
-        del imgbuf2
-        try:
-            self.img.close()
-        except OperationError:
-            exc = sys.exc_info()[1]
-            self.assertEqual(exc.args, ("Image is still access from 1 buffer.",))
-        else:
-            self.fail("An OperationError was expected")
-
-        del imgbuf1
-        self.img.close()
-
-    @owner("c.heimes")
     def test_convert(self):
         methods = ["greyscale", "convert_4bits", "convert_8bits",
                    "convert_16bits555", "convert_16bits565",
@@ -496,6 +418,87 @@ class TestImage(TestImageBase):
     def test_adjust(self):
         # TODO: simple test, add more tests
         self.img.adjustColors(10, 10, 2.0, 1)
+
+
+class TestImageBuffer(TestImageBase):
+    @owner("c.heimes")
+    def test_toBuffer(self):
+        for i in range(10):
+            imgbuf = self.img.toBuffer()
+        self.assertEqual(imgbuf.format, FI_FORMAT.FIF_JPEG)
+        expected = 366202 if hasJPEGTurbo() else 366043
+        self.assertEqual(imgbuf.size, expected)
+        self.assertEqual(len(bytes(imgbuf)), expected)
+        with Image(buffer=imgbuf) as newimg:
+            self._test_jpeg(newimg)
+
+    @owner("c.heimes")
+    def test_toBuffer_file(self):
+        #if sys.platform == 'win32':
+        #    size = 366548
+        size = 366202 if hasJPEGTurbo() else 366043
+
+        imgbuf = self.img.toBuffer()
+        self.assertEqual(imgbuf.format, FI_FORMAT.FIF_JPEG)
+        self.assertEqual(imgbuf.tell(), 0)
+        imgbuf.seek(0, 2)
+        self.assertEqual(imgbuf.tell(), size)
+        imgbuf.seek(0)
+
+        self.assertEqual(imgbuf.tell(), 0)
+        self.assertEqual(imgbuf.read(11), b'\xff\xd8\xff\xe0\x00\x10JFIF\x00')
+        imgbuf.seek(0)
+
+        self.assertEqual(len(imgbuf.read()), size)
+        self.assertEqual(imgbuf.read(), b"")
+        imgbuf.seek(0)
+
+        self.assertEqual(len(imgbuf.read(size + 10)), size)
+
+        imgbuf = self.img.toBuffer(format=fi.FIF_PNG)
+        self.assertEqual(imgbuf.format, fi.FIF_PNG)
+        self.assertEqual(imgbuf.read(4), b'\x89PNG')
+
+    @owner("c.heimes")
+    def test_toBuffer_PIL(self):
+        try:
+            from PIL.Image import open as pil_open
+        except ImportError:
+            return
+        imgbuf = self.img.toBuffer()
+        pilimg = pil_open(imgbuf)
+        self.assertEqual(pilimg.format, 'JPEG')
+        self.assertEqual(pilimg.size, self.img.size)
+        del pilimg
+
+        pilimg = self.img.toPIL(format=fi.FIF_PNG)
+        self.assertEqual(pilimg.format, 'PNG')
+        del pilimg
+
+    @owner("c.heimes")
+    def test_buffer_keepref(self):
+        imgbuf1 = self.img.toBuffer()
+        imgbuf2 = self.img.toBuffer()
+
+        try:
+            self.img.close()
+        except OperationError:
+            exc = sys.exc_info()[1]
+            self.assertEqual(exc.args, ("Image is still access from 2 buffers.",))
+        else:
+            self.fail("An OperationError was expected")
+
+        del imgbuf2
+        try:
+            self.img.close()
+        except OperationError:
+            exc = sys.exc_info()[1]
+            self.assertEqual(exc.args, ("Image is still access from 1 buffer.",))
+        else:
+            self.fail("An OperationError was expected")
+
+        del imgbuf1
+        self.img.close()
 
 
 class TestMetadata(TestImageBase):
@@ -731,6 +734,8 @@ def test_main():
     suite = unittest2.TestSuite()
     suite.addTest(unittest2.defaultTestLoader.loadTestsFromTestCase(TestImage))
     suite.addTest(unittest2.defaultTestLoader.loadTestsFromTestCase(TestMetadata))
+    if sys.version_info < (3, 0):
+        suite.addTest(unittest2.defaultTestLoader.loadTestsFromTestCase(TestImageBuffer))
     return suite
 
 def test_memory():

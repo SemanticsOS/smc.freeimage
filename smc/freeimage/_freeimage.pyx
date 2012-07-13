@@ -685,7 +685,7 @@ cdef class Image:
         # try to open the file - will raise an exception if file can't be read
         tmpf = stdio.fopen(cfilename, "r")
         if tmpf == NULL:
-            cpython.PyErr_SetFromErrnoWithFilename(IOError, filename)
+            cpython.PyErr_SetFromErrnoWithFilename(IOError, bfilename)
         else:
             stdio.fclose(tmpf)
 
@@ -1046,9 +1046,11 @@ cdef class Image:
 
     def toBuffer(self, int format=-1, int flags=0):
         """toBuffer([format=-1[, flags=0]] -> _MemoryIO instance
-
+    
         Access raw data of the image as read-only buffer or file like object
         """
+        if smc_fi.IS_PYTHON3:
+            raise NotImplementedError("tuBuffer() not implemented for 3.x yet")
         return _MemoryIO(self, format, flags)
 
     def toPIL(self, int format=-1, int flags=0):

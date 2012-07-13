@@ -1,6 +1,12 @@
 smc.freeimage test data
 =======================
 
+Note
+----
+
+The test files are large and therefore not included in the source
+distribution. All files are available in the mercurial repository.
+
 images
 ------
 

@@ -57,7 +57,7 @@ class TestEnums(unittest2.TestCase):
                 if name.startswith("_"):
                     continue
                 self.assert_(name[0].isupper(), name)
-                self.assert_(isinstance(value, (int, long)), (name, type(value)))
+                self.assert_(isinstance(value, int), (name, type(value)))
 
 def test_main():
     suite = unittest2.TestSuite()

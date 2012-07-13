@@ -11,13 +11,13 @@
 # Purpose     : Cython wrapper for FreeImage library
 #=============================================================================
 #
-# COVERED CODE IS PROVIDED UNDER THIS LICENSE ON AN "AS IS" BASIS, WITHOUT 
-# WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, WITHOUT 
+# COVERED CODE IS PROVIDED UNDER THIS LICENSE ON AN "AS IS" BASIS, WITHOUT
+# WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, WITHOUT
 # LIMITATION, WARRANTIES THAT THE COVERED CODE IS FREE OF DEFECTS, MERCHANTABLE,
 # FIT FOR A PARTICULAR PURPOSE OR NON-INFRINGING. THE ENTIRE RISK AS TO THE
 # QUALITY AND PERFORMANCE OF THE COVERED CODE IS WITH YOU. SHOULD ANY COVERED
-# CODE PROVE DEFECTIVE IN ANY RESPECT, YOU (NOT THE INITIAL DEVELOPER OR ANY 
-# OTHER CONTRIBUTOR) ASSUME THE COST OF ANY NECESSARY SERVICING, REPAIR OR 
+# CODE PROVE DEFECTIVE IN ANY RESPECT, YOU (NOT THE INITIAL DEVELOPER OR ANY
+# OTHER CONTRIBUTOR) ASSUME THE COST OF ANY NECESSARY SERVICING, REPAIR OR
 # CORRECTION. THIS DISCLAIMER OF WARRANTY CONSTITUTES AN ESSENTIAL PART OF
 # THIS LICENSE. NO USE OF ANY COVERED CODE IS AUTHORIZED HEREUNDER EXCEPT UNDER
 # THIS DISCLAIMER.
@@ -39,7 +39,7 @@ from logging import getLogger
 #--- constants
 __all__ = (
     "Image", "LCMSTransformation", "LCMSException",
-    "FreeImageError", "UnknownImageError", "LoadError", "SaveError", "OperationError", 
+    "FreeImageError", "UnknownImageError", "LoadError", "SaveError", "OperationError",
     "getVersion", "getCompiledFor", "getCopyright", "FormatInfo",
     "getFormatCount", "jpegTransform", "lookupX11Color", "lookupSVGColor",
     "LCMSIccCache", "LCMSProfileInfo", "XYZ2xyY", "xyY2XYZ", "getIntents", "getLCMSVersion",
@@ -100,10 +100,10 @@ IF 1:
     include "_lcms.pxi"
 ELSE:
     cdef class LCMSTransformation(object):
-        def __init__(self, 
-                     str inprofile, 
-                     str outprofile="sRGB", 
-                     int format=0, 
+        def __init__(self,
+                     str inprofile,
+                     str outprofile="sRGB",
+                     int format=0,
                      int intent=0,
                      unsigned long flags=0
                      ):
@@ -171,7 +171,7 @@ _COLOR_TYPE_NAMES = {
 # The error handling system uses Python's low level TLS API. It's one of the
 # very few APIs that don't depend the GIL. In the unlucky case a thread reports
 # an error but the error is never handled in the thread, some memory is be
-# lost.  
+# lost.
 
 cdef int tls_key = -1
 
@@ -306,20 +306,20 @@ class FreeImageMemoryError(FreeImageError, MemoryError):
 
 #cdef class _FiRGBQuad:
 #    cdef fi.RGBQUAD* quad
-#    
+#
 #    def __init__(self):
 #        self.quad = NULL
-#        
+#
 #    cdef void setData(self, fi.RGBQUAD* quad):
 #        self.quad = quad
-#        
+#
 #    def __repr__(self):
 #        if self.quad == NULL:
 #            return "<FIRGBQuad(NULL)>"
 #        return ("<FIRGBQuad(red:%i, green:%i, blue:%i, reserved:%i)>" %
 #                self.red, self.green, self.blue, self.reserved
 #                )
-#        
+#
 #    property red:
 #        def __get__(self):
 #            if self.quad == NULL:
@@ -331,13 +331,13 @@ class FreeImageMemoryError(FreeImageError, MemoryError):
 #            if self.quad == NULL:
 #                raise ValueError("Empty")
 #            return self.quad.rgbGreen
-#        
+#
 #    property blue:
 #        def __get__(self):
 #            if self.quad == NULL:
 #                raise ValueError("Empty")
 #            return self.quad.rgbBlue
-#        
+#
 #    property reserved:
 #        def __get__(self):
 #            if self.quad == NULL:
@@ -371,15 +371,15 @@ cdef class _BitmapInfo:
     """Wrapper for bitmap info header
     """
     cdef readonly fi.DWORD size
-    cdef readonly fi.LONG  width 
-    cdef readonly fi.LONG  height 
-    cdef readonly fi.WORD  planes 
+    cdef readonly fi.LONG  width
+    cdef readonly fi.LONG  height
+    cdef readonly fi.WORD  planes
     cdef readonly fi.WORD  bit_count
-    cdef readonly fi.DWORD compression 
-    cdef readonly fi.DWORD size_image 
-    cdef readonly fi.LONG  xppm 
-    cdef readonly fi.LONG  yppm 
-    cdef readonly fi.DWORD colors_used 
+    cdef readonly fi.DWORD compression
+    cdef readonly fi.DWORD size_image
+    cdef readonly fi.LONG  xppm
+    cdef readonly fi.LONG  yppm
+    cdef readonly fi.DWORD colors_used
     cdef readonly fi.DWORD colors_important
 
     def __repr__(self):
@@ -415,7 +415,7 @@ cdef _BitmapInfo BitmapInfo(fi.BITMAPINFOHEADER *header):
 #    cdef fi.FITAG* tag
 #    def __init__(self):
 #        self.tag = NULL
-#        
+#
 #    #cdef void setData(self, fi.FITAG* tag):
 #    #    self.tag = tag
 #
@@ -505,8 +505,8 @@ cdef class _MemoryIO:
         cdef Py_ssize_t size
 
         # Access raw data though the FI memory io API and Python buffer API
-        # Data is copied exactly ONE time in PyBytes_FromStringAndSize. 
-        # Neither the buffer API nor the MemoryIO API copies the data. 
+        # Data is copied exactly ONE time in PyBytes_FromStringAndSize.
+        # Neither the buffer API nor the MemoryIO API copies the data.
         smc_fi.PyObject_AsReadBuffer(self, <smc_fi.const_void_ptr *>&buf, &size)
         return cpython.PyBytes_FromStringAndSize(buf, size)
 
@@ -561,11 +561,11 @@ cdef class _MemoryIO:
         # allocates the space for the data segment but doesn't initialize it.
         # PyBytes_AsString() gives direct access to the pay load. FI_ReadMemory
         # stores the image data directly into the string and thus avoids another
-        # copy operation. 
+        # copy operation.
         amount = fi.FreeImage_ReadMemory(buf, <unsigned>rsize, 1, self._mem)
         # no data, invalid data
         if amount == 0:
-            raise IOError("Failed to read %i bytes (requested %i)" % 
+            raise IOError("Failed to read %i bytes (requested %i)" %
                           (rsize, size))
         return result
 
@@ -582,7 +582,7 @@ cdef int floodfill(fi.FIBITMAP* dib, unsigned red, unsigned green, unsigned blue
     cdef fi.FREE_IMAGE_TYPE image_type
 
     if red < 0 or green < 0 or blue < 0 or alpha < 0:
-        return ERR_ARG    
+        return ERR_ARG
 
     width = fi.FreeImage_GetWidth(dib)
     height = fi.FreeImage_GetHeight(dib)
@@ -613,7 +613,7 @@ cdef int floodfill(fi.FIBITMAP* dib, unsigned red, unsigned green, unsigned blue
 cdef void removeAllMetadata(fi.FIBITMAP *dib):
     """Remove ICC profile and metadata
     """
-    fi.FreeImage_DestroyICCProfile(dib) 
+    fi.FreeImage_DestroyICCProfile(dib)
     for model in _META_MODELS.values():
         fi.FreeImage_SetMetadata(<fi.FREE_IMAGE_MDMODEL>model, dib, NULL, NULL)
 
@@ -629,7 +629,7 @@ cdef int cloneICCProfile(fi.FIBITMAP *src, fi.FIBITMAP *dst):
         fi.FreeImage_DestroyICCProfile(dst)
         return 0
 
-def _new_image(unsigned width, unsigned height, unsigned bpp, 
+def _new_image(unsigned width, unsigned height, unsigned bpp,
               unsigned red_mask = 0, unsigned green_mask = 0, unsigned blue_mask = 0):
         cdef fi.FIBITMAP* dib
         cdef Image img
@@ -650,7 +650,7 @@ cdef class Image:
     cdef readonly unsigned int width
     cdef readonly unsigned int height
     cdef fi.FREE_IMAGE_FORMAT _format
-    cdef readonly char* filename
+    cdef char* _filename
     cdef unsigned int buffers
     cdef fi.FIBITMAP* _dib
     cdef fi.FIICCPROFILE* _icc
@@ -658,7 +658,7 @@ cdef class Image:
     def __init__(self, filename=None, buffer=None, _DibWrapper _bitmap = None,
                   int fd=-2, int flags = 0):
         filename = _decodeFilename(filename)
-        if (bool(filename) + bool(_bitmap is not None) + 
+        if (bool(filename) + bool(_bitmap is not None) +
             bool(buffer is not None) + bool(fd != -2)) != 1:
             raise ValueError("Exactly one argument must be applied")
         if filename:
@@ -685,12 +685,12 @@ cdef class Image:
         else:
             stdio.fclose(tmpf)
 
-        self.filename = cfilename 
+        self._filename = cfilename
         self._format = fi.FreeImage_GetFileType(cfilename, 0)
         if self._format == fi.FIF_UNKNOWN:
             raise dispatchFIError(UnknownImageError, filename)
         with nogil:
-            self._dib = fi.FreeImage_Load(self._format, self.filename, flags)
+            self._dib = fi.FreeImage_Load(self._format, self._filename, flags)
         if self._dib == NULL:
             raise dispatchFIError(LoadError, filename)
         self._init_infos()
@@ -699,7 +699,7 @@ cdef class Image:
         if bitmap.dib == NULL:
             raise dispatchFIError(LoadError, "DIB")
         self._dib = bitmap.dib
-        self.filename = "<bitmap>"
+        self._filename = "<bitmap>"
         if bitmap.oldimg:
             self._format = bitmap.oldimg._format
             self.dpi_x = bitmap.oldimg.dpi_x
@@ -727,7 +727,7 @@ cdef class Image:
         self._dib = fi.FreeImage_LoadFromMemory(self._format, mem, flags)
         fi.FreeImage_CloseMemory(mem)
 
-        self.filename = ""
+        self._filename = ""
         self._init_infos()
 
     cdef _init_infos(self):
@@ -756,7 +756,7 @@ cdef class Image:
         cdef Py_ssize_t cls, data
         cls = (4 * 2 # 4 ints
                + 3 * 8 # three points
-               + len(self.filename) # filename
+               + len(self._filename) # filename
                )
         if self._dib != NULL:
             # doesn't take alignment into account, might be larger
@@ -766,8 +766,8 @@ cdef class Image:
         return cls + data
 
     def __repr__(self):
-        return "<%s %ix%i %ibpp (%s; %s) at 0x%x>" % (self.__class__.__name__, 
-            self.width, self.height, self.bpp, self.mimetype, 
+        return "<%s %ix%i %ibpp (%s; %s) at 0x%x>" % (self.__class__.__name__,
+            self.width, self.height, self.bpp, self.mimetype,
             self.color_type_name, id(self))
 
     cdef _check_closed(self):
@@ -784,6 +784,12 @@ cdef class Image:
 
     # **********************************************************************
     # Info
+
+    property filename:
+        """filename
+        """
+        def __get__(self):
+            return funicode(self._filename)
 
     property size:
         """size -> (widht: int, height: int)
@@ -890,7 +896,7 @@ cdef class Image:
         """
         def __get__(self):
             self._check_closed()
-            return fi.FreeImage_GetColorsUsed(self._dib)    
+            return fi.FreeImage_GetColorsUsed(self._dib)
 
     property bpp:
         """bpp -> int
@@ -930,7 +936,7 @@ cdef class Image:
     property color_type:
         """color_type -> int (fi.FIC_*)
 
-        Get color type of the image, e.g. fi.FIC_MINISBLACK, fi.FIC_RGB, fi.FIC_CMYK ... 
+        Get color type of the image, e.g. fi.FIC_MINISBLACK, fi.FIC_RGB, fi.FIC_CMYK ...
         """
         def __get__(self):
             self._check_closed()
@@ -966,8 +972,8 @@ cdef class Image:
             self._check_closed()
             if fi.FreeImage_GetColorType(self._dib) != fi.FIC_RGB:
                 return None
-            return (fi.FreeImage_GetRedMask(self._dib), 
-                    fi.FreeImage_GetGreenMask(self._dib), 
+            return (fi.FreeImage_GetRedMask(self._dib),
+                    fi.FreeImage_GetGreenMask(self._dib),
                     fi.FreeImage_GetBlueMask(self._dib))
 
     property colororder:
@@ -993,7 +999,7 @@ cdef class Image:
         """closed -> bool
         """
         def __get__(self):
-            return self._dib == NULL    
+            return self._dib == NULL
 
     # **********************************************************************
     # fill with colors
@@ -1013,19 +1019,24 @@ cdef class Image:
 
     # **********************************************************************
     # save
-    def save(self, char* filename, int format=-1, int flags=0):
+    def save(self, filename, int format=-1, int flags=0):
         """save(filename[, format=-1[, flags=0]])
 
         Save image to file
         """
         cdef fi.BOOL result
+        cdef char* cfilename
         self._check_closed()
+
+        filename = _decodeFilename(filename)
+        cfilename = <char*>filename
         if format == -1:
-            format = fi.FreeImage_GetFIFFromFilename(filename)
+            format = fi.FreeImage_GetFIFFromFilename(cfilename)
         if format < 0 or format > fi.FreeImage_GetFIFCount() - 1:
             raise ValueError("Invalid format %i" % format)
         with nogil:
-            result = fi.FreeImage_Save(<fi.FREE_IMAGE_FORMAT>format, self._dib, filename, flags) 
+            result = fi.FreeImage_Save(<fi.FREE_IMAGE_FORMAT>format, self._dib,
+                                       cfilename, flags)
         if not result:
             raise dispatchFIError(SaveError, "Failed to save image to file '%s'" % filename)
 
@@ -1067,7 +1078,7 @@ cdef class Image:
 
         Paste source image into this image.
 
-        alpha: 0 to 255 for alpha blending or 256 for combination. 
+        alpha: 0 to 255 for alpha blending or 256 for combination.
         """
         cdef int result
         self._check_closed()
@@ -1091,7 +1102,7 @@ cdef class Image:
         if dib == NULL:
             raise dispatchFIError(OperationError, "Failed to clone image")
         clone = Image(_bitmap=DibWrapper(dib, self))
-        clone.filename = self.filename
+        clone._filename = self._filename
         return clone
 
     def crop(self, int left, int top, int right, int bottom):
@@ -1222,7 +1233,7 @@ cdef class Image:
 
         self._check_closed()
         if threshold > 255:
-            raise ValueError("Threshold must be between 0 and 255") 
+            raise ValueError("Threshold must be between 0 and 255")
         with nogil:
             dib = fi.FreeImage_Threshold(self._dib, <fi.BYTE>threshold)
 
@@ -1278,7 +1289,7 @@ cdef class Image:
         fi.FreeImage_CloneMetadata(dib, self._dib)
         return Image(_bitmap=DibWrapper(dib, self))
 
-    def rotateEx(self, double angle, double x_shift=0, double y_shift=0, 
+    def rotateEx(self, double angle, double x_shift=0, double y_shift=0,
                     double x_origin=0, double y_origin=0, bint use_mask=True):
         """ rotate(angle: double, ...) -> new image
 
@@ -1291,7 +1302,7 @@ cdef class Image:
         self._check_closed()
 
         with nogil:
-            dib = fi.FreeImage_RotateEx(self._dib, angle, x_shift, y_shift, 
+            dib = fi.FreeImage_RotateEx(self._dib, angle, x_shift, y_shift,
                                         x_origin, y_origin, use_mask)
         if dib == NULL:
             raise dispatchFIError(OperationError, "Failed to rotate image")
@@ -1315,7 +1326,7 @@ cdef class Image:
 
     #def setICC(self, str profile):
     #    """setICC()
-    #    
+    #
     #    Set ICC profile as byte string
     #    """
     #    cdef char *cp = cpython.PyBytes_AsString(profile)
@@ -1402,9 +1413,9 @@ cdef class Image:
     # **********************************************************************
     # Color adjustment
 
-    def adjustColors(self, float brightness=0.0, float contrast=0.0, 
+    def adjustColors(self, float brightness=0.0, float contrast=0.0,
                     float gamma=1.0, invert=0):
-        """adjustColors(brightness=0.0, contrast=0.0, gamma=1.0, 
+        """adjustColors(brightness=0.0, contrast=0.0, gamma=1.0,
                         invert=False) -> None
         """
         cdef int _invert
@@ -1455,7 +1466,7 @@ cdef class Image:
         bpp = fi.FreeImage_GetBPP(self._dib)
 
         if bpp == 24 or bpp == 32:
-            if not (channel == fi.FICC_BLACK or channel == fi.FICC_RED or 
+            if not (channel == fi.FICC_BLACK or channel == fi.FICC_RED or
                     channel == fi.FICC_GREEN or channel == fi.FICC_BLUE):
                 raise ValueError("%i bpp image supports histogram for red, "
                                  "green, blue or black channels only, got %i."
@@ -1568,13 +1579,13 @@ cdef class Image:
 #    cdef int hline_1bpp(self, fi.BYTE color, unsigned linewidth,
 #                   unsigned y0, unsigned xs, unsigned xe):
 #        """Horizontal line for b/w images
-#        
+#
 #        Draws line on coordinate y from xs to xe
 #        """
 #        cdef fi.BYTE *pixel
 #        cdef unsigned x, y
 #        cdef fi.FIBITMAP* dib = self._dib
-#        
+#
 #        # not yet implemented
 #        return 0
 #
@@ -1683,16 +1694,16 @@ cdef class Image:
 #    cdef int vline_1bpp(self, fi.BYTE color, unsigned linewidth,
 #                   unsigned x0, unsigned ys, unsigned ye):
 #        """Vertical line for b/w images
-#        
+#
 #        Draws line on coordinate y from xs to xe
 #        """
 #        cdef fi.BYTE *pixel
 #        cdef unsigned x, y
 #        cdef fi.FIBITMAP* dib = self._dib
-#        
+#
 #        # not yet implemented
 #        return 0
-#        
+#
 #        with nogil:
 #            for y from ys <= y < ye:
 #                pixel = fi.FreeImage_GetScanLine(dib, y)
@@ -1702,7 +1713,7 @@ cdef class Image:
 #                    pixel += 1
 #        return 0
 
-# Format Info 
+# Format Info
 
 def FormatInfo_from_filename(cls, char *filename):
     """from_filename(filename) -> FormatInfo instance
@@ -1788,7 +1799,7 @@ cdef class FormatInfo:
     def getSupportsExportType(self, int type):
         if type < 0 or type > fi.FIT_RGBAF:
             raise ValueError("Invalid type %i" % type)
-        return fi.FreeImage_FIFSupportsExportType(self._format, 
+        return fi.FreeImage_FIFSupportsExportType(self._format,
                                                   <fi.FREE_IMAGE_TYPE>type)
 
     def getSupportsExportBPP(self, int bpp):
@@ -1806,7 +1817,7 @@ def getVersion():
 def getCompiledFor():
     """getCompiledFor() -> tuple(major, minor, serial)
     """
-    return (fi.FREEIMAGE_MAJOR_VERSION, 
+    return (fi.FREEIMAGE_MAJOR_VERSION,
             fi.FREEIMAGE_MINOR_VERSION,
             fi.FREEIMAGE_RELEASE_SERIAL)
 
@@ -1846,7 +1857,7 @@ def jpegTransform(char *src, char *dst, unsigned int op, unsigned int perfect=0)
     @param dst: path to destination file, can be the same file as src
     @typ dst: str
     @param op: a FIJPEG_OP_* constant
-    @param perfect: if true raises an exception if image has odd iMCU 
+    @param perfect: if true raises an exception if image has odd iMCU
         aligned (see PDF)
     """
     cdef fi.BOOL result
@@ -1855,8 +1866,8 @@ def jpegTransform(char *src, char *dst, unsigned int op, unsigned int perfect=0)
         raise ValueError("OP not in range 0-7")
 
     with nogil:
-        result = fi.FreeImage_JPEGTransform(src, dst, 
-                                         <fi.FREE_IMAGE_JPEG_OPERATION>op, perfect) 
+        result = fi.FreeImage_JPEGTransform(src, dst,
+                                         <fi.FREE_IMAGE_JPEG_OPERATION>op, perfect)
     if not result:
         raise dispatchFIError(OperationError, "JPEG Transformation of '%s' to '%s' with op "
                              "'%i' failed." % (src, dst, op))

@@ -68,7 +68,7 @@ class SimpleStuff(unittest2.TestCase):
         self.assertEqual(info.mimetype, "image/jpeg")
         self.assertEqual(info.name, "JPEG")
         self.assertEqual(info.description, "JPEG - JFIF Compliant")
-        self.assertEqual(info.magic_reg_expr, "^\xff\xd8\xff")
+        self.assertEqual(info.magic_reg_expr, b"^\xff\xd8\xff")
         self.assert_(info.supports_reading)
         self.assert_(info.supports_writing)
         self.assert_(info.supports_icc)
@@ -123,10 +123,12 @@ class SimpleStuff(unittest2.TestCase):
     def test_lookupColor(self):
         self.assertEqual(freeimage.lookupX11Color("black"), (0, 0, 0))
         self.assertEqual(freeimage.lookupX11Color("orange"), (255, 165, 0))
+        self.assertTypeError(freeimage.lookupX11Color, None)
 
         self.assertEqual(freeimage.lookupSVGColor("black"), (0, 0, 0))
         self.assertEqual(freeimage.lookupSVGColor("lemonchiffon"),
                          (255, 250, 205))
+        self.assertTypeError(freeimage.lookupSVGColor, None)
 
 
 def test_main():

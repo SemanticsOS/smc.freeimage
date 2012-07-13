@@ -25,7 +25,6 @@
 #
 import os
 import sys
-import pkg_resources
 import shutil
 import struct
 from glob import glob
@@ -34,7 +33,6 @@ iswindows = (sys.platform == "win32")
 is64 = (struct.calcsize("P") * 8 == 64)
 VLS_ENV = os.environ.get("VLS_ENV")
 
-pkg_resources.require("Cython>=0.16")
 import Cython.Distutils
 from Cython.Distutils import build_ext
 # aliases for 
@@ -92,11 +90,11 @@ if VLS_ENV is not None:
 
 turbo = findlib("freeimageturbo", **fi_ext_extras)
 if turbo:
-    print "*** FreeImage with libjpeg-turbo found at %s, using turbo" % turbo
+    print("*** FreeImage with libjpeg-turbo found at %s, using turbo" % turbo)
     fi_ext_extras["libraries"].insert(0, "freeimageturbo")
     fi_ext_extras.setdefault("define_macros", []).append(("FREEIMAGE_TURBO", 1))
 else:
-    print "*** FreeImage with libjpeg-turbo not found"
+    print("*** FreeImage with libjpeg-turbo not found")
     fi_ext_extras["libraries"].insert(0, "freeimage")
     fi_ext_extras.setdefault("define_macros", []).append(("FREEIMAGE_TURBO", 0))
 
@@ -109,7 +107,7 @@ if os.path.isfile("smc/freeimage/_freeimage.c"):
 
 setup_info = dict(
     name="smc.freeimage",
-    version="0.0.2",
+    version="0.1.20120713",
     ext_modules=[
         Extension("smc.freeimage._freeimage", ["smc/freeimage/_freeimage.pyx"],
                   depends=["smc/freeimage/freeimage.pxd", "smc/freeimage/fipython.pxd",
@@ -176,3 +174,4 @@ setup(**setup_info)
 #if iswindows:
 #    os.unlink("smc/freeimage/FreeImage.dll")
 #    os.unlink("smc/freeimage/lcms2.dll")
+

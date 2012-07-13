@@ -1,0 +1,26 @@
+Installing smc.freeimage
+========================
+
+.. contents::
+..
+   1  Requirements
+   2  Installation
+
+Requirements
+------------
+
+- Python 2.6, 2.7, 3.2 or newer
+
+- Cython 0.16  http://cython.org/
+
+- FreeImage 3.15.3  http://freeimage.sourceforge.net/
+
+- LCMS 2.3  http://www.littlecms.com/
+
+- C99 compatible C compiler or VS 2008+
+
+
+Installation
+-------------
+
+$ python setup.py install

@@ -1,0 +1,10 @@
+include setup.py fi2pxd.py lcms2pxd.py
+include CHANGES.txt INSTALL.txt README.txt TODO.txt
+include license-fi.txt license-gpl.txt LICENSE.txt
+include MANIFEST.in Makefile
+include setup.py setup.cfg build.bat
+recursive-include smc/freeimage *.py
+recursive-include smc/freeimage *.pyx *.pxd *.pxi *.h *.c
+recursive-include smc/freeimage/tests/testdata *.tiff *.jpg *.icm
+recursive-include docs *.rst *.txt *.html *.css Makefile
+include docs/*.py docs/make.bat

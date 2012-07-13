@@ -1,0 +1,14 @@
+smc.freeimage 0.1
+=================
+
+*Release date: 13-Jul-2012*
+
+- project moved to https://bitbucket.org/tiran/smc.freeimage
+
+- experimental support for Python 3
+
+- support for Windows X86_64 builds
+
+- updated code base to LCMS 2.3, FreeImage 3.15.3 and Cython 0.16
+
+- modernized and cleaned up Cython code to use recent features like pxd files

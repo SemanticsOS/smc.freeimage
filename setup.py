@@ -128,7 +128,7 @@ if os.path.isfile("smc/freeimage/_freeimage.c"):
 
 setup_info = dict(
     name="smc.freeimage",
-    version="0.1.20120713",
+    version="0.1",
     ext_modules=[
         Extension("smc.freeimage._freeimage", ["smc/freeimage/_freeimage.pyx"],
                   **fi_ext_extras),
@@ -156,7 +156,7 @@ setup_info = dict(
     description="Python wrapper for FreeImage and LCMS2 libraries",
     long_description=open("README.txt").read(),
     classifiers=(
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "License :: Other/Proprietary License",
         "License :: OSI Approved :: GNU General Public License (GPL)",
@@ -164,7 +164,13 @@ setup_info = dict(
         "Operating System :: Microsoft :: Windows",
         "Operating System :: POSIX",
         "Operating System :: OS Independent",
+        "Programming Language :: Cython",
         "Programming Language :: Python",
+        "Programming Language :: Python :: 2",
+        "Programming Language :: Python :: 2.6",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.2",
         "Programming Language :: C",
         "Topic :: Multimedia :: Graphics",
         "Topic :: Software Development :: Libraries :: Python Modules"

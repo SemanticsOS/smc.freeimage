@@ -123,12 +123,12 @@ class SimpleStuff(unittest2.TestCase):
     def test_lookupColor(self):
         self.assertEqual(freeimage.lookupX11Color("black"), (0, 0, 0))
         self.assertEqual(freeimage.lookupX11Color("orange"), (255, 165, 0))
-        self.assertTypeError(freeimage.lookupX11Color, None)
+        self.assertRaises(TypeError, freeimage.lookupX11Color, None)
 
         self.assertEqual(freeimage.lookupSVGColor("black"), (0, 0, 0))
         self.assertEqual(freeimage.lookupSVGColor("lemonchiffon"),
                          (255, 250, 205))
-        self.assertTypeError(freeimage.lookupSVGColor, None)
+        self.assertRaises(TypeError, freeimage.lookupSVGColor, None)
 
 
 def test_main():

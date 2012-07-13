@@ -417,7 +417,7 @@ cdef class LCMSProfileInfo(object):
     cdef lcms.cmsHPROFILE hProfile
     cdef public dict info
 
-    def __init__(self, bytes data=None, bytes filename=None):
+    def __init__(self, bytes data=None, filename=None):
         self.hProfile = NULL
         cdef lcms.cmsContext context
         cdef int size

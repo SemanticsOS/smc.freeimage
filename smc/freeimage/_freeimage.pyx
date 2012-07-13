@@ -87,13 +87,15 @@ cdef object funicode(smc_fi.const_char_ptr s):
     return <bytes>s[:slen]
 
 cdef bytes _decodeFilename(object filename):
-    if filename is None:
-        return None
+    #if filename is None:
+    #    return None
     if cpython.PyBytes_Check(filename):
         return filename
-    else:
+    elif cpython.PyUnicode_Check(filename):
         # XXX try FS encoding first
         return filename.encode("utf-8")
+    else:
+        raise TypeError(filename)
 
 # LCMS integration
 IF 1:
@@ -253,7 +255,7 @@ def dispatchFIError(cls, *args):
     # get error message from FreeImage
     err = getError()
     if err != NULL:
-        fimsg = str(err)
+        fimsg = unicode(err, "utf-8")
         stdlib.free(err)
         err = NULL
     else:
@@ -265,7 +267,7 @@ def dispatchFIError(cls, *args):
     # 'DIB allocation failed'
     # 'Not enough memory'
     if fimsg:
-        fimsgl = str(fimsg).lower()
+        fimsgl = fimsg.lower()
         for msg in ("allocate", "allocation", "memory", "no space"):
             if msg in fimsgl:
                 # it's some kind of memory error
@@ -657,7 +659,6 @@ cdef class Image:
 
     def __init__(self, filename=None, buffer=None, _DibWrapper _bitmap = None,
                   int fd=-2, int flags = 0):
-        filename = _decodeFilename(filename)
         if (bool(filename) + bool(_bitmap is not None) +
             bool(buffer is not None) + bool(fd != -2)) != 1:
             raise ValueError("Exactly one argument must be applied")
@@ -675,13 +676,16 @@ cdef class Image:
 
     new = staticmethod(_new_image)
 
-    cdef from_filename(self, bytes filename, int flags):
-        cdef char* cfilename = filename
+    cdef from_filename(self, filename, int flags):
+        cdef char* cfilename
         cdef stdio.FILE *tmpf
+
+        bfilename = _decodeFilename(filename)
+        cfilename = <char*>bfilename
         # try to open the file - will raise an exception if file can't be read
         tmpf = stdio.fopen(cfilename, "r")
         if tmpf == NULL:
-            cpython.PyErr_SetFromErrnoWithFilename(IOError, cfilename)
+            cpython.PyErr_SetFromErrnoWithFilename(IOError, filename)
         else:
             stdio.fclose(tmpf)
 
@@ -1322,7 +1326,7 @@ cdef class Image:
         if not self.has_icc:
             return None
         return cpython.PyBytes_FromStringAndSize(<char *>self._icc.data,
-                                                  self._icc.size)
+                                                 self._icc.size)
 
     #def setICC(self, str profile):
     #    """setICC()
@@ -1344,7 +1348,7 @@ cdef class Image:
         """Apply an LCMS transformation
         """
         if trafo is None:
-            trafo = LCMSTransformation(self.getICC(), "sRGB")
+            trafo = LCMSTransformation(self.getICC(), b"sRGB")
         lcmsFI(self, trafo)
 
     # **********************************************************************
@@ -1715,27 +1719,30 @@ cdef class Image:
 
 # Format Info
 
-def FormatInfo_from_filename(cls, char *filename):
+def FormatInfo_from_filename(cls, filename):
     """from_filename(filename) -> FormatInfo instance
 
     Guess format from filename
     """
+    filename = _decodeFilename(filename)
     format = fi.FreeImage_GetFIFFromFilename(filename)
     return cls(format)
 
-def FormatInfo_from_file(cls, char *filename):
+def FormatInfo_from_file(cls, filename):
     """from_file(path) -> FormatInfo instance
 
     Guess format from file
     """
+    filename = _decodeFilename(filename)
     format = fi.FreeImage_GetFileType(filename, 0)
     return cls(format)
 
-def FormatInfo_from_mimetype(cls, char *mime):
+def FormatInfo_from_mimetype(cls, mime):
     """from_mimetype(mime) -> FormatInfo instance
 
     Guess format from mime type string
     """
+    mime = _decodeFilename(mime)
     format = fi.FreeImage_GetFIFFromMime(mime)
     return cls(format)
 
@@ -1794,7 +1801,7 @@ cdef class FormatInfo:
 
     def getExtensions(self):
         exts = fi.FreeImage_GetFIFExtensionList(self._format)
-        return exts.split(',')
+        return [funicode(ext) for ext in exts.split(b',')]
 
     def getSupportsExportType(self, int type):
         if type < 0 or type > fi.FIT_RGBAF:
@@ -1835,6 +1842,7 @@ def lookupX11Color(name):
     """lookupX11Color(name) -> (r, g, b)
     """
     cdef fi.BYTE red, green, blue
+    name = _decodeFilename(name)
     if not fi.FreeImage_LookupX11Color(name, &red, &green, &blue):
         raise dispatchFIError(OperationError, "Cannot lookup X11 color %s" % name)
     return (red, green, blue)
@@ -1843,11 +1851,12 @@ def lookupSVGColor(name):
     """lookupSVGColor(name) -> (r, g, b)
     """
     cdef fi.BYTE red, green, blue
+    name = _decodeFilename(name)
     if not fi.FreeImage_LookupSVGColor(name, &red, &green, &blue):
         raise dispatchFIError(OperationError, "Cannot lookup SVG color %s" % name)
     return (red, green, blue)
 
-def jpegTransform(char *src, char *dst, unsigned int op, unsigned int perfect=0):
+def jpegTransform(src, dst, unsigned int op, unsigned int perfect=0):
     """jpegTransform(source: str, destination: str, op: int) -> None
 
     Perform lossless rotation or flipping on a JPEG image
@@ -1861,13 +1870,23 @@ def jpegTransform(char *src, char *dst, unsigned int op, unsigned int perfect=0)
         aligned (see PDF)
     """
     cdef fi.BOOL result
+    cdef char* csrc
+    cdef char* cdst
+
+    bsrc = _decodeFilename(src)
+    bdst = _decodeFilename(dst)
 
     if op > fi.FIJPEG_OP_ROTATE_270:
         raise ValueError("OP not in range 0-7")
 
+    csrc = bsrc
+    cdst = bdst
+
     with nogil:
-        result = fi.FreeImage_JPEGTransform(src, dst,
-                                         <fi.FREE_IMAGE_JPEG_OPERATION>op, perfect)
+        result = fi.FreeImage_JPEGTransform(csrc, 
+                                            cdst,
+                                            <fi.FREE_IMAGE_JPEG_OPERATION>op,
+                                            perfect)
     if not result:
         raise dispatchFIError(OperationError, "JPEG Transformation of '%s' to '%s' with op "
                              "'%i' failed." % (src, dst, op))

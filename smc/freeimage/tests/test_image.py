@@ -277,7 +277,7 @@ class TestImage(TestImageBase):
         self.assertEqual(imgbuf.format, FI_FORMAT.FIF_JPEG)
         expected = 366202 if hasJPEGTurbo() else 366043
         self.assertEqual(imgbuf.size, expected)
-        self.assertEqual(len(str(imgbuf)), expected)
+        self.assertEqual(len(bytes(imgbuf)), expected)
         with Image(buffer=imgbuf) as newimg:
             self._test_jpeg(newimg)
 
@@ -705,15 +705,15 @@ class TestMetadata(TestImageBase):
     def test_copymetadata(self):
         clone = self.tiff.clone()
         count = clone.getMetadataCount()
-        self.assertEqual(sum(count.itervalues()), 18, count)
+        self.assertEqual(sum(count.values()), 18, count)
 
         clone.clearMetadata()
         count = clone.getMetadataCount()
-        self.assertEqual(sum(count.itervalues()), 0, count)
+        self.assertEqual(sum(count.values()), 0, count)
 
         clone.copyMetadataFrom(self.tiff)
         count = clone.getMetadataCount()
-        self.assertEqual(sum(count.itervalues()), 18, count)
+        self.assertEqual(sum(count.values()), 18, count)
 
         # round trip doesn't work because libtiff can't write all EXIF data yet (as of 3.14.1)
         # check save/load roundtrip       
@@ -723,7 +723,7 @@ class TestMetadata(TestImageBase):
 
         #loaded = Image(fname)
         #count = loaded.getMetadataCount()
-        #self.assertEqual(sum(count.itervalues()), 18)
+        #self.assertEqual(sum(count.values()), 18)
         #self.assertEqual(self.tiff.getMetadata(), loaded.getMetadata())
 
 

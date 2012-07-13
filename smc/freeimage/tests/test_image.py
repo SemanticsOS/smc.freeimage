@@ -61,8 +61,6 @@ class TestImageBase(unittest2.TestCase):
         if self.tmpdir is not None:
             if self.remove_tmp:
                 shutil.rmtree(self.tmpdir)
-            else:
-                print self.tmpdir
 
     @property
     def img(self):
@@ -186,7 +184,8 @@ class TestImage(TestImageBase):
     def test_open_invalid(self):
         try:
             Image(__file__)
-        except UnknownImageError, err:
+        except UnknownImageError:
+            err = sys.exc_info()[1]
             self.assert_(isinstance(err, UnknownImageError))
             self.assertEqual(err.args, (__file__,))
         else:
@@ -332,7 +331,8 @@ class TestImage(TestImageBase):
 
         try:
             self.img.close()
-        except OperationError, exc:
+        except OperationError:
+            exc = sys.exc_info()[1]
             self.assertEqual(exc.args, ("Image is still access from 2 buffers.",))
         else:
             self.fail("An OperationError was expected")
@@ -340,7 +340,8 @@ class TestImage(TestImageBase):
         del imgbuf2
         try:
             self.img.close()
-        except OperationError, exc:
+        except OperationError:
+            exc = sys.exc_info()[1]
             self.assertEqual(exc.args, ("Image is still access from 1 buffer.",))
         else:
             self.fail("An OperationError was expected")
@@ -472,7 +473,8 @@ class TestImage(TestImageBase):
 
         try:
             jpegTransform("/bogus/filename", "/bogus/filename", 0)
-        except OperationError, err:
+        except OperationError:
+            err = sys.exc_info()[1]
             expected = ("JPEG Transformation of '/bogus/filename' to "
                         "'/bogus/filename' with op '0' failed.",
                         "Invalid magic number")
@@ -734,10 +736,10 @@ def test_main():
 def test_memory():
     import psutil
     p = psutil.Process(os.getpid())
-    print [(mem // 1024 ** 2) for mem in p.get_memory_info()]
+    print([(mem // 1024 ** 2) for mem in p.get_memory_info()])
     for i in range(50):
         TestMetadata("test_count").debug()
-    print [(mem // 1024 ** 2) for mem in p.get_memory_info()]
+    print([(mem // 1024 ** 2) for mem in p.get_memory_info()])
 
 if __name__ == "__main__": # pragma: no cover
     suite = unittest2.TestSuite()

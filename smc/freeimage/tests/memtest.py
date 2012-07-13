@@ -92,7 +92,7 @@ class LoadTest(object):
             gc.collect()
             info = win32_status()
             info.update(round=round, fi=sys.getrefcount(Image))
-            print "%(round)i: peak %(PeakWorkingSetSize)0.3f, working %(WorkingSetSize)0.3f, image ref %(fi)i" % info
+            print("%(round)i: peak %(PeakWorkingSetSize)0.3f, working %(WorkingSetSize)0.3f, image ref %(fi)i" % info)
 
     else:
         @classmethod
@@ -100,7 +100,7 @@ class LoadTest(object):
             gc.collect()
             info = proc_status()
             info.update(round=round, fi=sys.getrefcount(Image))
-            print "%(round)i: virtual %(VmSize)0.3f, resident %(VmRSS)0.3f, image ref %(fi)i" % info
+            print("%(round)i: virtual %(VmSize)0.3f, resident %(VmRSS)0.3f, image ref %(fi)i" % info)
 
 
     def __call__(self, rounds=100, log=5):

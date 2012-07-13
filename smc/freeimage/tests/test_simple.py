@@ -91,21 +91,24 @@ class SimpleStuff(unittest2.TestCase):
 
         try:
             FormatInfo.from_mimetype("image/invalid")
-        except OperationError, err:
+        except OperationError:
+            err = sys.exc_info()[1]
             self.assertEqual(err.args, ('Unable to detect format.',))
         else:
             self.fail("OperationError expected")
 
         try:
             FormatInfo.from_filename(__file__)
-        except OperationError, err:
+        except OperationError:
+            err = sys.exc_info()[1]
             self.assertEqual(err.args, ('Unable to detect format.',))
         else:
             self.fail("OperationError expected")
 
         try:
             FormatInfo.from_file(__file__)
-        except OperationError, err:
+        except OperationError:
+            err = sys.exc_info()[1]
             self.assertEqual(err.args, ('Unable to detect format.',))
         else:
             self.fail("OperationError expected")

@@ -63,4 +63,4 @@ except ImportError:
         return wrapper
 
 if __name__ == "__main__":
-    print TESTDATA
+    print(TESTDATA)

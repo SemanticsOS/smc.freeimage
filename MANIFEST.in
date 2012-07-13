@@ -5,6 +5,6 @@ include MANIFEST.in Makefile
 include setup.py setup.cfg build.bat
 recursive-include smc/freeimage *.py
 recursive-include smc/freeimage *.pyx *.pxd *.pxi *.h *.c
-recursive-include smc/freeimage/tests/testdata *.tiff *.jpg *.icm
+recursive-include smc/freeimage/tests/testdata *.tiff *.jpg *.icm README.txt
 recursive-include docs *.rst *.txt *.html *.css Makefile
 include docs/*.py docs/make.bat

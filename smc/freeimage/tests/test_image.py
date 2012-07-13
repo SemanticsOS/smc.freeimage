@@ -295,18 +295,18 @@ class TestImage(TestImageBase):
         imgbuf.seek(0)
 
         self.assertEqual(imgbuf.tell(), 0)
-        self.assertEqual(imgbuf.read(11), '\xff\xd8\xff\xe0\x00\x10JFIF\x00')
+        self.assertEqual(imgbuf.read(11), b'\xff\xd8\xff\xe0\x00\x10JFIF\x00')
         imgbuf.seek(0)
 
         self.assertEqual(len(imgbuf.read()), size)
-        self.assertEqual(imgbuf.read(), "")
+        self.assertEqual(imgbuf.read(), b"")
         imgbuf.seek(0)
 
         self.assertEqual(len(imgbuf.read(size + 10)), size)
 
         imgbuf = self.img.toBuffer(format=fi.FIF_PNG)
         self.assertEqual(imgbuf.format, fi.FIF_PNG)
-        self.assertEqual(imgbuf.read(4), '\x89PNG')
+        self.assertEqual(imgbuf.read(4), b'\x89PNG')
 
     @owner("c.heimes")
     def test_toBuffer_PIL(self):
@@ -690,7 +690,7 @@ class TestMetadata(TestImageBase):
     def test_icc(self):
         self.assertEqual(self.tiff.has_icc, True)
         icc = self.tiff.getICC()
-        self.assert_(isinstance(icc, str))
+        self.assert_(isinstance(icc, bytes))
         self.assertEqual(len(icc), 308804)
         self.tiff.removeICC()
         self.assertEqual(self.tiff.has_icc, False)

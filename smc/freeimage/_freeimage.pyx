@@ -86,6 +86,15 @@ cdef object funicode(smc_fi.const_char_ptr s):
         return s[:slen].decode('UTF-8')
     return <bytes>s[:slen]
 
+cdef bytes _decodeFilename(object filename):
+    if filename is None:
+        return None
+    if cpython.PyBytes_Check(filename):
+        return filename
+    else:
+        # XXX try FS encoding first
+        return filename.encode("utf-8")
+
 # LCMS integration
 IF 1:
     include "_lcms.pxi"
@@ -646,12 +655,13 @@ cdef class Image:
     cdef fi.FIBITMAP* _dib
     cdef fi.FIICCPROFILE* _icc
 
-    def __init__(self, char* filename="", buffer=None, _DibWrapper _bitmap = None,
-                 int fd=-2, int flags = 0):
-        if (bool(string.strlen(filename)) + bool(_bitmap is not None) + 
+    def __init__(self, filename=None, buffer=None, _DibWrapper _bitmap = None,
+                  int fd=-2, int flags = 0):
+        filename = _decodeFilename(filename)
+        if (bool(filename) + bool(_bitmap is not None) + 
             bool(buffer is not None) + bool(fd != -2)) != 1:
             raise ValueError("Exactly one argument must be applied")
-        if string.strlen(filename):
+        if filename:
             self.from_filename(filename, flags)
         if buffer:
             self.from_buffer(buffer, flags)
@@ -665,17 +675,18 @@ cdef class Image:
 
     new = staticmethod(_new_image)
 
-    cdef from_filename(self, char* filename, int flags):
+    cdef from_filename(self, bytes filename, int flags):
+        cdef char* cfilename = filename
         cdef stdio.FILE *tmpf
         # try to open the file - will raise an exception if file can't be read
-        tmpf = stdio.fopen(filename, "r")
+        tmpf = stdio.fopen(cfilename, "r")
         if tmpf == NULL:
-            cpython.PyErr_SetFromErrnoWithFilename(IOError, filename)
+            cpython.PyErr_SetFromErrnoWithFilename(IOError, cfilename)
         else:
             stdio.fclose(tmpf)
 
-        self.filename = filename 
-        self._format = fi.FreeImage_GetFileType(filename, 0)
+        self.filename = cfilename 
+        self._format = fi.FreeImage_GetFileType(cfilename, 0)
         if self._format == fi.FIF_UNKNOWN:
             raise dispatchFIError(UnknownImageError, filename)
         with nogil:
@@ -1335,7 +1346,7 @@ cdef class Image:
         """
         counts = {}
         self._check_closed()
-        for name, model in _META_MODELS.iteritems():
+        for name, model in _META_MODELS.items():
             counts[name] = int(fi.FreeImage_GetMetadataCount(model, self._dib))
         return counts
 
@@ -1348,7 +1359,7 @@ cdef class Image:
         metas = {}
 
         self._check_closed()
-        for name, model in _META_MODELS.iteritems():
+        for name, model in _META_MODELS.items():
             handle = fi.FreeImage_FindFirstMetadata(model, self._dib, &tag)
             if handle == NULL:
                 continue
@@ -1358,9 +1369,9 @@ cdef class Image:
                 string = <char *>fi.FreeImage_TagToString(model, tag, NULL)
                 descr = <char *>fi.FreeImage_GetTagDescription(tag)
                 if descr != NULL:
-                    meta[key] = string, descr
+                    meta[funicode(key)] = funicode(string), funicode(descr)
                 else:
-                    meta[key] = string, None
+                    meta[funicode(key)] = funicode(string), None
                 if not fi.FreeImage_FindNextMetadata(handle, &tag):
                     fi.FreeImage_FindCloseMetadata(handle)
                     break
@@ -1376,7 +1387,7 @@ cdef class Image:
 
     def clearMetadata(self):
         self._check_closed()
-        for name, model in _META_MODELS.iteritems():
+        for name, model in _META_MODELS.items():
             if not fi.FreeImage_SetMetadata(model, self._dib, NULL, NULL):
                 raise dispatchFIError(OperationError, "Failed to delete metadata model %s" % name)
 
@@ -1752,7 +1763,7 @@ cdef class FormatInfo:
 
     property magic_reg_expr:
         def __get__(self):
-            return funicode(fi.FreeImage_GetFIFRegExpr(self._format))
+            return fi.FreeImage_GetFIFRegExpr(self._format)
 
     property supports_reading:
         def __get__(self):
@@ -1809,7 +1820,7 @@ def getFormatCount():
     """
     return fi.FreeImage_GetFIFCount()
 
-def lookupX11Color(char *name):
+def lookupX11Color(name):
     """lookupX11Color(name) -> (r, g, b)
     """
     cdef fi.BYTE red, green, blue
@@ -1817,7 +1828,7 @@ def lookupX11Color(char *name):
         raise dispatchFIError(OperationError, "Cannot lookup X11 color %s" % name)
     return (red, green, blue)
 
-def lookupSVGColor(char *name):
+def lookupSVGColor(name):
     """lookupSVGColor(name) -> (r, g, b)
     """
     cdef fi.BYTE red, green, blue

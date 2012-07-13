@@ -255,7 +255,13 @@ cdef class LCMSIccCache(object):
         self._cache.clear()
 
     def keys(self):
-        return self._cache.keys()
+        return list(self._cache)
+
+    def __iter__(self):
+        return iter(self._cache)
+
+    def __contains__(self, key):
+        return key in self._cache
 
     def lookupByImage(self,
                       Image img,

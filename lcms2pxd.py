@@ -464,7 +464,10 @@ def update_lcmsconstants_c(fname):
             typ = mo.group(1).strip()
             lines.append('    PyModule_AddIntConstant(m, "%s", %s);' %
                          (typ, typ))
-    lines.append('}\n\n')
+    lines.append("#if PY_MAJOR_VERSION >= 3")
+    lines.append("    return m;")
+    lines.append("#endif")
+    lines.append('}\n')
     with open(fname, 'w') as f:
         f.write('\n'.join(lines))
 

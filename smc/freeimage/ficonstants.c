@@ -26,7 +26,7 @@
 #include "Python.h"
 #include "FreeImage.h"
 
-#if FREEIMAGE_MAJOR_VERSION != 3 || FREEIMAGE_MINOR_VERSION < 13
+#if FREEIMAGE_MAJOR_VERSION != 3 || FREEIMAGE_MINOR_VERSION < 15
     #error Your FreeImage.h is too old. At least 3.11 is required.
 #endif
 
@@ -40,13 +40,42 @@ PyDoc_STRVAR(module_doc,
 This module exposes all FreeImage integer constants. It can either be \n\
 used directly or through the freeimage.enums module.");
 
-PyMODINIT_FUNC
+#if PY_MAJOR_VERSION >= 3
+
+
+static struct PyModuleDef moduledef = {
+        PyModuleDef_HEAD_INIT,
+        "ficonstants",
+        module_doc,
+        -1,
+        ficonstants_methods,
+        NULL,
+        NULL,
+        NULL,
+        NULL
+};
+
+#define INITERROR return NULL
+
+PyObject *
+PyInit_ficonstants(void)
+
+#else
+#define INITERROR return
+
+
+void
 initficonstants(void)
+#endif
 {
     PyObject *m;
+#if PY_MAJOR_VERSION >= 3
+    m = PyModule_Create(&moduledef);
+#else
     m = Py_InitModule3("ficonstants", ficonstants_methods, module_doc);
+#endif
     if (m == NULL)
-        return;
+        INITERROR;
 
 #if FREEIMAGE_COLORORDER == FREEIMAGE_COLORORDER_BGR
     PyModule_AddStringConstant(m, "COLORORDER", "BGR");
@@ -326,4 +355,7 @@ initficonstants(void)
     PyModule_AddIntConstant(m, "WBMP_DEFAULT", WBMP_DEFAULT);
     PyModule_AddIntConstant(m, "XBM_DEFAULT", XBM_DEFAULT);
     PyModule_AddIntConstant(m, "XPM_DEFAULT", XPM_DEFAULT);
+#if PY_MAJOR_VERSION >= 3
+    return m;
+#endif
 }

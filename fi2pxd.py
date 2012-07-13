@@ -293,7 +293,7 @@ def enums2classes():
     lines.append(ENUMS_PY_HEADER)
     lines.append("__all__ = ['%s']" % "', '".join(sorted(enums.values())))
     lines.append("\n")
-    for key, consts in ENUMS.iteritems():
+    for key, consts in ENUMS.items():
         lines.append("class %s(_enums):" % enums[key])
         for const in consts:
             lines.append("    %s = fi.%s" % (const, const))
@@ -303,7 +303,7 @@ def enums2classes():
 def enums2cdefs():
     lines = []
     lines.append("    # enums")
-    for key, consts in ENUMS.iteritems():
+    for key, consts in ENUMS.items():
         if key == "CONSTANTS":
             key = ""
         lines.append("    cdef enum %s:" % key)
@@ -319,11 +319,14 @@ def update_ficonstants_c(fname=FICONSTANTS):
             lines.append(line.rstrip())
             if 'MARKER' in line:
                 break
-    for key, consts in ENUMS.iteritems():
+    for key, consts in ENUMS.items():
         lines.append('\n    /* Enum: %s */' % key)
         for const in consts:
             lines.append('    PyModule_AddIntConstant(m, "%s", %s);' %
                          (const, const))
+    lines.append("#if PY_MAJOR_VERSION >= 3")
+    lines.append("    return m;")
+    lines.append("#endif")
     lines.append('}\n')
     with open(fname, 'w') as f:
         f.write('\n'.join(lines))

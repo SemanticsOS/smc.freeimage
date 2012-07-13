@@ -147,7 +147,7 @@ FOOTER = """
 
     ctypedef void (*FI_InitProc)(Plugin *plugin, int format_id)
     ctypedef void (*FreeImage_OutputMessageFunctionStdCall) (FREE_IMAGE_FORMAT fif, smc_fi.const_char_ptr msg)
-    
+
 """
 
 ENUMS = {

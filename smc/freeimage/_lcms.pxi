@@ -449,7 +449,7 @@ cdef class LCMSProfileInfo(object):
         buf = < stddef.wchar_t *> malloc(read)
         lcms.cmsMLUgetWide(mlu, language, country, buf, read);
         # buf contains additional \0 junk
-        uni = fipython.PyUnicode_FromWideChar(buf, smc_fi.wcslen(buf))
+        uni = smc_fi.PyUnicode_FromWideChar(buf, smc_fi.wcslen(buf))
         free(buf)
         return uni
 

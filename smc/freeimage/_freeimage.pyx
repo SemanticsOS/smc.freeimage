@@ -26,7 +26,6 @@
 #--- imports
 #include "freeimage.pxi"
 cimport cpython
-cimport fipython
 cimport freeimage as fi
 cimport smc_fi
 from libc cimport stdio
@@ -55,7 +54,7 @@ cdef extern from "stdlib.h" nogil:
     cdef int strlen(char*)
     cdef void* malloc(unsigned int)
     cdef void free(void*)
-    
+
 cdef extern from "unistd.h" nogil:
     int dup(int oldfd)
 
@@ -84,21 +83,21 @@ ELSE:
                      unsigned long flags=0
                      ):
             raise NotImplementedError
-    
+
     class LCMSException(Exception):
         pass
-    
+
     class LCMSIccCache(object):
         def __init__(self):
             raise NotImplementedError
-    
+
     cdef int lcmsFI(Image img, LCMSTransformation trafo):
         raise NotImplementedError
-        
+
     cdef class LCMSProfileInfo(object):
         def __init__(self, *args):
             raise NotImplementedError
-   
+
     def XYZ2xyY(float X, float Y, float Z):
         raise NotImplementedError
 
@@ -156,11 +155,11 @@ cdef struct SmcFiError:
     char *msg
     int msglen
 
-    
+
 cdef void clearError():
     global tls_key
     cdef SmcFiError *old
-    
+
     old = <SmcFiError*>cpython.PyThread_get_key_value(tls_key)
     if old != NULL:
         # must free() value first, it's not freed by delete_key_value()
@@ -169,18 +168,18 @@ cdef void clearError():
         free(old)
         cpython.PyThread_delete_key_value(tls_key)
 
-    
+
 cdef void setError(fi.FREE_IMAGE_FORMAT format, smc_fi.const_char_ptr msg):
     cdef SmcFiError *error
-    
+
     # clear error first, otherwise I can't set a new value
     clearError()
-    
+
     error = <SmcFiError*>malloc(sizeof(SmcFiError))
     if error == NULL:
         # error but can't report it here :/
         return
-    
+
     error.msglen = strlen(msg)
     error.format = format
     error.msg = <char*>malloc((error.msglen+1) * sizeof(char))
@@ -189,7 +188,7 @@ cdef void setError(fi.FREE_IMAGE_FORMAT format, smc_fi.const_char_ptr msg):
         return
     strncpy(error.msg, msg, error.msglen)
     error.msg[error.msglen] = 0 # terminate string
-    
+
     cpython.PyThread_set_key_value(tls_key, <void*>error)
 
 
@@ -198,9 +197,9 @@ cdef char* getError():
     # The caller is responsible to free the char*
     cdef char *msg
     cdef SmcFiError *error
-    
+
     error = <SmcFiError*>cpython.PyThread_get_key_value(tls_key)
-    
+
     if error == NULL:
         return NULL
     else:
@@ -225,7 +224,7 @@ cdef initErrorHandler():
 
 def dispatchFIError(cls, *args):
     cdef char* err
-    
+
     # get error message from FreeImage
     err = getError()
     if err != NULL:
@@ -234,7 +233,7 @@ def dispatchFIError(cls, *args):
         err = NULL
     else:
         fimsg = None
-        
+
     # it's a memory error if the message contains words like
     # 'DIB allocation failed', 'allocate' and 'memory'
     # 'No space for raster buffer'
@@ -246,7 +245,7 @@ def dispatchFIError(cls, *args):
             if msg in fimsgl:
                 # it's some kind of memory error
                 return FreeImageMemoryError(*args, fimsg=fimsg)
-    
+
     return cls(*args, fimsg=fimsg)
 
 
@@ -257,20 +256,26 @@ class FreeImageError(Exception):
         self.fimsg = fimsg
         super(FreeImageError, self).__init__(*args)
 
+
 class UnknownImageError(FreeImageError):
     pass
+
 
 class LoadError(FreeImageError):
     pass
 
+
 class SaveError(FreeImageError):
     pass
+
 
 class OperationError(FreeImageError):
     pass
 
+
 class FreeImageMemoryError(FreeImageError, MemoryError):
     pass
+
 
 #--- wrappers
 
@@ -325,7 +330,8 @@ cdef class _DibWrapper:
     """
     cdef fi.FIBITMAP* dib
     cdef Image oldimg
-    
+
+
 cdef _DibWrapper DibWrapper(fi.FIBITMAP* dib, oldimg):
     """Factory to wrap a bitmap in an object
     """
@@ -350,7 +356,7 @@ cdef class _BitmapInfo:
     cdef readonly fi.LONG  yppm 
     cdef readonly fi.DWORD colors_used 
     cdef readonly fi.DWORD colors_important
-    
+
     def __repr__(self):
         return ("<BitmapInfo size=%lu, width=%ld, height=%ld, planes=%d,"
         " bit_count=%d, compression=%lu, size_image=%lu, xppm=%d,"
@@ -359,6 +365,7 @@ cdef class _BitmapInfo:
         self.compression, self.size_image, self.xppm, self.yppm,
         self.colors_used, self.colors_important
     ))
+
 
 cdef _BitmapInfo BitmapInfo(fi.BITMAPINFOHEADER *header):
     """Factory to wrap a bitmap info header
@@ -396,7 +403,7 @@ cdef _BitmapInfo BitmapInfo(fi.BITMAPINFOHEADER *header):
 
 cdef class _MemoryIO:
     """Memory IO interface to an image
-    
+
     A memory IO object is the preferred way to access a loaded image from
     Python. It provides a high-performance interface to the FreeImage memory
     subsystem. The image is available through a read only buffer, a file like
@@ -406,11 +413,11 @@ cdef class _MemoryIO:
     cdef readonly int size
     cdef fi.FREE_IMAGE_FORMAT _format
     cdef Image _img
-    
+
     def __init__(self, Image img not None, int format=-1, int flags=0):
         cdef fi.FIMEMORY *mem = NULL
         self._mem = NULL
-         
+
         if img._dib == NULL:
             raise IOError("Operation on closed image")
         if format == fi.FIF_UNKNOWN:
@@ -420,10 +427,10 @@ cdef class _MemoryIO:
                 self._format = fi.FIF_PNG
         else:
             self._format = <fi.FREE_IMAGE_FORMAT>format
-            
+
         if self._format < 0 or self._format > fi.FreeImage_GetFIFCount():
             raise ValueError("Invalid image format")
-        
+
         mem = fi.FreeImage_OpenMemory(NULL, 0)
         if mem == NULL:
             raise dispatchFIError(FreeImageMemoryError, "fi.FreeImage_OpenMemory() has failed")
@@ -444,61 +451,61 @@ cdef class _MemoryIO:
         self._img = img
         self._img.buffers += 1
 
-    
+
     def __dealloc__(self):
         if self._mem != NULL:
             fi.FreeImage_CloseMemory(self._mem)
         self._mem = NULL
         self._img.buffers -= 1
-    
+
     def __getreadbuffer__(self, int index, void **ptr):
         cdef fi.DWORD size
         if index != 0:
             raise SystemError("accessing non-existent string segment")
         fi.FreeImage_AcquireMemory(self._mem, <fi.BYTE**>ptr, &size)
         return size
-         
+
     def __getsegcount__(self, Py_ssize_t *lenp):
         cdef long pos
         cdef Py_ssize_t len
-        
+
         if lenp:
             len = <Py_ssize_t>self.size
             lenp = &len
 
         return 1
-    
+
     def __str__(self):
         cdef char *buf
         cdef Py_ssize_t size
-        
+
         # Access raw data though the FI memory io API and Python buffer API
         # Data is copied exactly ONE time in PyBytes_FromStringAndSize. 
         # Neither the buffer API nor the MemoryIO API copies the data. 
-        fipython.PyObject_AsReadBuffer(self, <smc_fi.const_void_ptr *>&buf, &size)
+        smc_fi.PyObject_AsReadBuffer(self, <smc_fi.const_void_ptr *>&buf, &size)
         return cpython.PyBytes_FromStringAndSize(buf, size)
 
     property format:
         def __get__(self):
             return self._format
-    
+
     def tell(self):
         """tell() -> int
-        
+
         current file position
         """
         return fi.FreeImage_TellMemory(self._mem)
-    
+
     def seek(self, int offset, unsigned whence=stdio.SEEK_SET):
         """seek(offset [, whence]) -> None
-        
+
         Move to new file position.
         """
         if whence < stdio.SEEK_SET or whence > stdio.SEEK_END:
             raise ValueError("whence must be 0, 1 or 2")
         if not fi.FreeImage_SeekMemory(self._mem, offset, whence):
             raise dispatchFIError(OperationError, "Failure during seek")
-    
+
     def read(self, signed size=-1):
         """read([size]) -> data
         """
@@ -514,12 +521,12 @@ cdef class _MemoryIO:
             rsize = self.size
         elif rsize < 0:
             raise ValueError("Invalid size")
-        
+
         # read up the EOF max
         pos = fi.FreeImage_TellMemory(self._mem)
         if (self.size - pos) < rsize:
             rsize = self.size - pos
-        
+
         # allocate buffer
         result = cpython.PyBytes_FromStringAndSize(NULL, rsize)
         buf = cpython.PyBytes_AsString(result)
@@ -540,7 +547,7 @@ cdef class _MemoryIO:
 ###
 cdef int floodfill(fi.FIBITMAP* dib, unsigned red, unsigned green, unsigned blue, unsigned alpha) nogil:
     """fill bitmap with the given colors
-    
+
     only implemented for 24bit RGB images atm
     """
     cdef fi.BYTE *bits
@@ -551,13 +558,13 @@ cdef int floodfill(fi.FIBITMAP* dib, unsigned red, unsigned green, unsigned blue
 
     if red < 0 or green < 0 or blue < 0 or alpha < 0:
         return ERR_ARG    
-    
+
     width = fi.FreeImage_GetWidth(dib)
     height = fi.FreeImage_GetHeight(dib)
     pitch = fi.FreeImage_GetPitch(dib)
     image_type = fi.FreeImage_GetImageType(dib)
     bpp = fi.FreeImage_GetBPP(dib)
-    
+
     if image_type == fi.FIT_BITMAP and bpp == 24:
         if red > 255 or green > 255 or blue > 255 or alpha:
             return ERR_ARG
@@ -572,7 +579,7 @@ cdef int floodfill(fi.FIBITMAP* dib, unsigned red, unsigned green, unsigned blue
                 pixel += 3
             # next line
             bits += pitch
-        
+
         return 0
 
     return ERR_UNSUP
@@ -603,16 +610,16 @@ def _new_image(unsigned width, unsigned height, unsigned bpp,
         cdef Image img
         with nogil:
             dib = fi.FreeImage_Allocate(width, height, bpp, red_mask, green_mask, blue_mask)
-        
+
         if dib == NULL:
             raise dispatchFIError(LoadError, "Unable to allocate image")
-        
+
         return Image(_bitmap=DibWrapper(dib, None))
 
 
 cdef class Image:
     """Image(filename[, buffer=None[, flags=0]])
-    
+
     Create a new Image. Either filename or buffer must applied.
     """
     cdef readonly unsigned int width
@@ -622,7 +629,7 @@ cdef class Image:
     cdef unsigned int buffers
     cdef fi.FIBITMAP* _dib
     cdef fi.FIICCPROFILE* _icc
-    
+
     def __init__(self, char* filename="", buffer=None, _DibWrapper _bitmap = None,
                  int fd=-2, int flags = 0):
         if (bool(strlen(filename)) + bool(_bitmap is not None) + 
@@ -639,9 +646,9 @@ cdef class Image:
         if fd != -2:
             self.from_fd(fd, flags)
         self.buffers = 0
-            
+
     new = staticmethod(_new_image)
-        
+
     cdef from_filename(self, char* filename, int flags):
         cdef stdio.FILE *tmpf
         # try to open the file - will raise an exception if file can't be read
@@ -650,7 +657,7 @@ cdef class Image:
             cpython.PyErr_SetFromErrnoWithFilename(IOError, filename)
         else:
             stdio.fclose(tmpf)
-        
+
         self.filename = filename 
         self._format = fi.FreeImage_GetFileType(filename, 0)
         if self._format == fi.FIF_UNKNOWN:
@@ -660,7 +667,7 @@ cdef class Image:
         if self._dib == NULL:
             raise dispatchFIError(LoadError, filename)
         self._init_infos()
-        
+
     cdef from_bitmap(self, _DibWrapper bitmap):
         if bitmap.dib == NULL:
             raise dispatchFIError(LoadError, "DIB")
@@ -674,13 +681,13 @@ cdef class Image:
             # sensible default
             self._format = fi.FIF_PNG
         self._init_infos()
-        
+
     cdef from_buffer(self, object obj, int flags):
         cdef Py_ssize_t size
         cdef fi.BYTE *buffer
         cdef fi.FIMEMORY *mem
-        
-        fipython.PyObject_AsReadBuffer(obj, <smc_fi.const_void_ptr *>&buffer, &size)
+
+        smc_fi.PyObject_AsReadBuffer(obj, <smc_fi.const_void_ptr *>&buffer, &size)
         mem = fi.FreeImage_OpenMemory(buffer, size)
         if mem == NULL:
             raise dispatchFIError(FreeImageMemoryError, "fi.FreeImage_OpenMemory() has failed")
@@ -689,21 +696,21 @@ cdef class Image:
             fi.FreeImage_CloseMemory(mem)
             mem = NULL
             raise dispatchFIError(UnknownImageError, "<buffer>")
-        
+
         self._dib = fi.FreeImage_LoadFromMemory(self._format, mem, flags)
         fi.FreeImage_CloseMemory(mem)
-        
+
         self.filename = ""
         self._init_infos()
-        
+
     cdef _init_infos(self):
         self.width = fi.FreeImage_GetWidth(self._dib)
         self.height = fi.FreeImage_GetHeight(self._dib)
         self._icc = NULL
-        
+
     def close(self):
         """close() -> None
-        
+
         Close the image and free all resources. The close operation fails when
         a buffer is still using the image data.
         """
@@ -714,10 +721,10 @@ cdef class Image:
             with nogil:
                 fi.FreeImage_Unload(self._dib)
                 self._dib = NULL
-        
+
     def __dealloc__(self):
         self.close()
-        
+
     def __sizeof__(self):
         cdef Py_ssize_t cls, data
         cls = (4 * 2 # 4 ints
@@ -730,27 +737,27 @@ cdef class Image:
         else:
             data = 0
         return cls + data
-                
+
     def __repr__(self):
         return "<%s %ix%i %ibpp (%s; %s) at 0x%x>" % (self.__class__.__name__, 
             self.width, self.height, self.bpp, self.mimetype, 
             self.color_type_name, id(self))
-        
+
     cdef _check_closed(self):
         if self._dib == NULL:
             raise IOError("Operation on closed image")
-            
+
     def __enter__(self):
         self._check_closed()
         return self
-    
+
     def __exit__(self, exc, value, tb):
         self.close()
-        
-                
+
+
     # **********************************************************************
     # Info
-    
+
     property size:
         """size -> (widht: int, height: int)
         """
@@ -759,15 +766,15 @@ cdef class Image:
 
     property format:
         """format -> int (fi.FIF_*)
-        
+
         Format is the image format like fi.FIF_JPEG or fi.FIF_PNG.
         """
         def __get__(self):
             return self._format
-        
+
     property type:
         """type -> int (fi.FIT_*)
-        
+
         Type referes to the data type of the image like fi.FIT_BITMAP or fi.FIT_RGBF.
         """
         def __get__(self):
@@ -775,7 +782,7 @@ cdef class Image:
 
     property mimetype:
         """mimetype -> str
-        
+
         mimetype of the image, e.g. image/jpeg
         """
         def __get__(self):
@@ -783,13 +790,13 @@ cdef class Image:
 
     property dpi_x:
         """dpi_x -> int
-        
+
         Dots per inch (x axis)
         """
         def __get__(self):
             self._check_closed()
             return round(fi.FreeImage_GetDotsPerMeterX(self._dib) * INCH_METER)
-        
+
         def __set__(self, float dpi):
             if dpi < 0:
                 raise ValueError("DPI must be positive or zero.")
@@ -798,19 +805,19 @@ cdef class Image:
 
     property dpi_y:
         """dpi_y -> int
-        
+
         Dots per inch (y axis)
         """
         def __get__(self):
             self._check_closed()
             return round(fi.FreeImage_GetDotsPerMeterY(self._dib) * INCH_METER)
-        
+
         def __set__(self, float dpi):
             if dpi < 0:
                 raise ValueError("DPI must be positive or zero.")
             self._check_closed()
             fi.FreeImage_SetDotsPerMeterY(self._dib, int(round(dpi * METER_INCH)))
-            
+
     property dpi:
         """dpi -> (dpi_x: int, dpi_y: int)
         """
@@ -819,25 +826,25 @@ cdef class Image:
 
     property dpm_x:
         """dpm_x -> int
-        
+
         Dots per meter (x axis)
         """
         def __get__(self):
             self._check_closed()
             return int(fi.FreeImage_GetDotsPerMeterX(self._dib))
-        
+
         def __set__(self, unsigned dpm):
             fi.FreeImage_SetDotsPerMeterX(self._dib, dpm)
 
     property dpm_y:
         """dpm_y -> int
-        
+
         Dots per meter (y axis)
         """
         def __get__(self):
             self._check_closed()
             return int(fi.FreeImage_GetDotsPerMeterY(self._dib))
-        
+
         def __set__(self, unsigned dpm):
             self._check_closed()
             fi.FreeImage_SetDotsPerMeterY(self._dib, dpm)
@@ -850,17 +857,17 @@ cdef class Image:
 
     property colors_used:
         """colors_used -> int
-        
+
         Returns number of colors used in the image (palette-size) or 0 for
         high color images.
         """
         def __get__(self):
             self._check_closed()
             return fi.FreeImage_GetColorsUsed(self._dib)    
-            
+
     property bpp:
         """bpp -> int
-        
+
         bits per pixel
         """
         def __get__(self):
@@ -869,7 +876,7 @@ cdef class Image:
 
     property has_icc:
         """has_icc -> bool
-        
+
         Returns true if the image has an ICC profile
         """
         def __get__(self):
@@ -881,7 +888,7 @@ cdef class Image:
                 return True
             else:
                 return False
-        
+
     property icc_cmyk:
         """icc_cmyk -> bool
         """
@@ -895,13 +902,13 @@ cdef class Image:
 
     property color_type:
         """color_type -> int (fi.FIC_*)
-        
+
         Get color type of the image, e.g. fi.FIC_MINISBLACK, fi.FIC_RGB, fi.FIC_CMYK ... 
         """
         def __get__(self):
             self._check_closed()
             return fi.FreeImage_GetColorType(self._dib)
-        
+
     property color_type_name:
         """color_type_name -> str
         """
@@ -910,21 +917,21 @@ cdef class Image:
             self._check_closed()
             ct = fi.FreeImage_GetColorType(self._dib)
             return _COLOR_TYPE_NAMES.get(ct, "UNKNOWN")
-        
+
     property is_transparent:
         """is_transparent -> bool
         """
         def __get__(self):
             self._check_closed()
             return fi.FreeImage_IsTransparent(self._dib)
-        
+
     property has_bg_color:
         """has_bg_color -> bool
         """
         def __get__(self):
             self._check_closed()
             return fi.FreeImage_HasBackgroundColor(self._dib)
-            
+
     property rgb_mask:
         """Get bitmask for red, green and blue channel
         """
@@ -935,10 +942,10 @@ cdef class Image:
             return (fi.FreeImage_GetRedMask(self._dib), 
                     fi.FreeImage_GetGreenMask(self._dib), 
                     fi.FreeImage_GetBlueMask(self._dib))
-                     
+
     property colororder:
         """Get color order (BGR or RGB)
-        
+
         The color order depends on the endianess of the system
         """
         def __get__(self):
@@ -946,26 +953,26 @@ cdef class Image:
                 return "BGR"
             else:
                 return "RGB"
-                
+
     property has_pixels:
         """Check if image is loaded with fi.FIF_LOAD_NOPIXELS
-        
+
         @return: True if image has pixel and isn't loaded with fi.FIF_LOAD_NOPIXELS
         """
         def __get__(self):
             return bool(fi.FreeImage_HasPixels(self._dib))
-    
+
     property closed:
         """closed -> bool
         """
         def __get__(self):
             return self._dib == NULL    
-    
+
     # **********************************************************************
     # fill with colors
     def floodfill(self, int red, int green, int blue):
         """floodfill(red, green, blue) -> None
-        
+
         Fill the entire image
         """
         self._check_closed()
@@ -976,12 +983,12 @@ cdef class Image:
             raise NotImplementedError("floodfill for type: %i, bpp:  %i" %
                 (fi.FreeImage_GetImageType(self._dib), self.bpp))
 
-    
+
     # **********************************************************************
     # save
     def save(self, char* filename, int format=-1, int flags=0):
         """save(filename[, format=-1[, flags=0]])
-        
+
         Save image to file
         """
         cdef fi.BOOL result
@@ -994,21 +1001,21 @@ cdef class Image:
             result = fi.FreeImage_Save(<fi.FREE_IMAGE_FORMAT>format, self._dib, filename, flags) 
         if not result:
             raise dispatchFIError(SaveError, "Failed to save image to file '%s'" % filename)
-        
+
     def toBuffer(self, int format=-1, int flags=0):
         """toBuffer([format=-1[, flags=0]] -> _MemoryIO instance
-        
+
         Access raw data of the image as read-only buffer or file like object
         """
         return _MemoryIO(self, format, flags)
-    
+
     def toPIL(self, int format=-1, int flags=0):
         """toPIL([format=-1[, flags=0]] -> PIL image
         """
         from PIL.Image import open as pil_open
         buffer = self.toBuffer(format, flags)
         return pil_open(buffer)
-    
+
     # **********************************************************************
     # scale
     def resize(self, int width, int height, int filter=fi.FILTER_BOX):
@@ -1016,7 +1023,7 @@ cdef class Image:
         """
         cdef fi.FIBITMAP* dib
         cdef Image new
-        
+
         self._check_closed()
         with nogil:
             dib = fi.FreeImage_Rescale(self._dib, width, height, <fi.FREE_IMAGE_FILTER>filter)
@@ -1030,9 +1037,9 @@ cdef class Image:
 
     def paste(self, Image src not None, unsigned left, unsigned top, unsigned alpha = 256):
         """paste(src: Image, left: int, top: int[, alpha=256]) -> None
-        
+
         Paste source image into this image.
-        
+
         alpha: 0 to 255 for alpha blending or 256 for combination. 
         """
         cdef int result
@@ -1043,10 +1050,10 @@ cdef class Image:
             result = fi.FreeImage_Paste(self._dib, src._dib, left, top, alpha)
         if not result:
             raise dispatchFIError(OperationError, "Failed to paste image")
-            
+
     def clone(self):
         """clone() -> new image
-        
+
         @note: clone uses low level FI functions to clone metadata and ICC, too.
         """
         cdef fi.FIBITMAP* dib
@@ -1059,13 +1066,13 @@ cdef class Image:
         clone = Image(_bitmap=DibWrapper(dib, self))
         clone.filename = self.filename
         return clone
-    
+
     def crop(self, int left, int top, int right, int bottom):
         """crop(left: int, top: int, right: int, bottom: int) -> new image
         """
         cdef fi.FIBITMAP* dib
         cdef Image new
-        
+
         self._check_closed()
         if right == -1 and bottom == -1:
             right = self.width
@@ -1083,11 +1090,11 @@ cdef class Image:
 
     # **********************************************************************
     # convert
-    
+
     cdef Image convert_helper(self, FI_ConvertFunction conv):
         cdef fi.FIBITMAP* dib
         cdef Image new
-        
+
         self._check_closed()
         with nogil:
             dib = conv(self._dib)
@@ -1134,13 +1141,13 @@ cdef class Image:
         """convert_rgbf() -> new image
         """
         return self.convert_helper(fi.FreeImage_ConvertToRGBF)
-    
+
     def to_standard(self, bint scale_linear=True):
         """to_standard([scale_linear=True]) -> new image
         """
         cdef fi.FIBITMAP* dib
         cdef Image new
-        
+
         self._check_closed()
         with nogil:
             dib = fi.FreeImage_ConvertToStandardType(self._dib, scale_linear)
@@ -1153,45 +1160,45 @@ cdef class Image:
         """
         cdef fi.FIBITMAP* dib
         cdef Image new
-        
+
         self._check_closed()
         with nogil:
             dib = fi.FreeImage_ConvertToType(self._dib, <fi.FREE_IMAGE_TYPE>dst_type, scale_linear)
         if dib == NULL:
             raise dispatchFIError(OperationError, "Failed to convert image")
         return Image(_bitmap=DibWrapper(dib, self))
-    
+
     def dither(self, unsigned dither_alg):
         """dither(dither_alg) -> new image
-        
+
         Converts a bitmap to 1-bit monochrome bitmap using a dithering algorithm.
         """
         cdef fi.FIBITMAP* dib
         cdef Image new
-        
+
         self._check_closed()
         with nogil:
             dib = fi.FreeImage_Dither(self._dib, <fi.FREE_IMAGE_DITHER>dither_alg)
         if dib == NULL:
             raise dispatchFIError(OperationError, "Failed to dither image")
         return Image(_bitmap=DibWrapper(dib, self))
-    
+
     def threshold(self, unsigned threshold):
         """threshold(threshold: int) -> new image
-        
+
         Converts a bitmap to 1-bit monochrome bitmap
-        
+
         @param threshold: 0 to 255
         """
         cdef fi.FIBITMAP* dib
         cdef Image new
-        
+
         self._check_closed()
         if threshold > 255:
             raise ValueError("Threshold must be between 0 and 255") 
         with nogil:
             dib = fi.FreeImage_Threshold(self._dib, <fi.BYTE>threshold)
-        
+
         if dib == NULL:
             raise dispatchFIError(OperationError, "Failed to applying threshold to image")
         return Image(_bitmap=DibWrapper(dib, self))
@@ -1215,16 +1222,16 @@ cdef class Image:
         with nogil:
             fi.FreeImage_FlipVertical(copy._dib)
         return copy
-    
+
     def rotate(self, int angle):
         """rotate(angle: int) -> new image
-        
+
         Only angles 90, 180 and 270 degrees are supported
-        
+
         Warning: rotation will result in loose of metadata
         """
         cdef fi.FIBITMAP* dib
-        
+
         self._check_closed()
         if angle == -90:
             angle = 270
@@ -1243,19 +1250,19 @@ cdef class Image:
         cloneICCProfile(self._dib, dib)
         fi.FreeImage_CloneMetadata(dib, self._dib)
         return Image(_bitmap=DibWrapper(dib, self))
-    
+
     def rotateEx(self, double angle, double x_shift=0, double y_shift=0, 
                     double x_origin=0, double y_origin=0, bint use_mask=True):
         """ rotate(angle: double, ...) -> new image
-            
+
         wrapper around fi.FreeImage_RotateEx
-        
+
         angle: angle in degree
         """
         cdef fi.FIBITMAP* dib
-        
+
         self._check_closed()
-        
+
         with nogil:
             dib = fi.FreeImage_RotateEx(self._dib, angle, x_shift, y_shift, 
                                         x_origin, y_origin, use_mask)
@@ -1264,13 +1271,13 @@ cdef class Image:
         cloneICCProfile(self._dib, dib)
         fi.FreeImage_CloneMetadata(dib, self._dib)
         return Image(_bitmap=DibWrapper(dib, self))
-        
+
     # **********************************************************************
     # ICC
-    
+
     def getICC(self):
         """getICC() -> str
-        
+
         Return ICC profile a byte string
         """
         cdef fi.FIICCPROFILE* icc
@@ -1278,7 +1285,7 @@ cdef class Image:
             return None
         return cpython.PyBytes_FromStringAndSize(<char *>self._icc.data,
                                                   self._icc.size)
-                                                 
+
     #def setICC(self, str profile):
     #    """setICC()
     #    
@@ -1287,14 +1294,14 @@ cdef class Image:
     #    cdef char *cp = cpython.PyBytes_AsString(profile)
     #    self._icc = fi.FreeImage_CreateICCProfile(self._dib, <char*>cp, len(profile))
 
-                                                 
+
     def removeICC(self):
         """Remove ICC profile
         """
         self._icc = NULL
         fi.FreeImage_DestroyICCProfile(self._dib)
 
-        
+
     def iccTransform(self, LCMSTransformation trafo=None):
         """Apply an LCMS transformation
         """
@@ -1304,10 +1311,10 @@ cdef class Image:
 
     # **********************************************************************
     # Metadata
-        
+
     def getMetadataCount(self):
         """getMetadataCount() -> dict
-        
+
         Count number of metadata for each model
         """
         counts = {}
@@ -1315,7 +1322,7 @@ cdef class Image:
         for name, model in _META_MODELS.iteritems():
             counts[name] = int(fi.FreeImage_GetMetadataCount(model, self._dib))
         return counts
-    
+
     def getMetadata(self):
         """getMetadata() -> dict
         """
@@ -1323,7 +1330,7 @@ cdef class Image:
         cdef fi.FITAG *tag
         cdef char *key, *string, *descr
         metas = {}
-        
+
         self._check_closed()
         for name, model in _META_MODELS.iteritems():
             handle = fi.FreeImage_FindFirstMetadata(model, self._dib, &tag)
@@ -1341,7 +1348,7 @@ cdef class Image:
                 if not fi.FreeImage_FindNextMetadata(handle, &tag):
                     fi.FreeImage_FindCloseMetadata(handle)
                     break
-        
+
         return metas
 
     def copyMetadataFrom(self, Image src not None):
@@ -1350,13 +1357,13 @@ cdef class Image:
             raise IOError("Operation on closed source image")
         if not fi.FreeImage_CloneMetadata(self._dib, src._dib):
             raise dispatchFIError(OperationError, "Failed to copy metadata")
-    
+
     def clearMetadata(self):
         self._check_closed()
         for name, model in _META_MODELS.iteritems():
             if not fi.FreeImage_SetMetadata(model, self._dib, NULL, NULL):
                 raise dispatchFIError(OperationError, "Failed to delete metadata model %s" % name)
-                
+
     def getInfoHeader(self):
         """getInfoHeader() -> BitmapInfo instance
         """
@@ -1367,16 +1374,16 @@ cdef class Image:
 
     # **********************************************************************
     # Color adjustment
-    
+
     def adjustColors(self, float brightness=0.0, float contrast=0.0, 
                     float gamma=1.0, invert=0):
         """adjustColors(brightness=0.0, contrast=0.0, gamma=1.0, 
                         invert=False) -> None
         """
         cdef int _invert
-        
+
         self._check_closed()
-            
+
         _invert = cpython.PyObject_IsTrue(invert)
         if brightness < -100.0 or brightness > +100.0:
             raise ValueError("Brightness must be between -100. and +100. "
@@ -1386,11 +1393,11 @@ cdef class Image:
                              "(percentage)")
         if gamma <= 0.0:
             raise ValueError("Gamma must be greater than 0.")
-        
+
         if not fi.FreeImage_AdjustColors(self._dib, brightness, contrast,
                                       gamma, invert):
             raise dispatchFIError( OperationError, "Failed to adjust color.")
-    
+
     def adjustGamma(self, float gamma=1.0):
         """adjustGamma(gamma=1.0) -> None
         """
@@ -1405,7 +1412,7 @@ cdef class Image:
         """adjustContrast(contrast=0.0) -> None
         """
         self.adjustColors(contrast=contrast)
-        
+
     def invert(self):
         """invert() -> None
         """
@@ -1416,10 +1423,10 @@ cdef class Image:
         """
         cdef int bpp, i
         cdef fi.DWORD hist[256]
-        
+
         self._check_closed()
         bpp = fi.FreeImage_GetBPP(self._dib)
-        
+
         if bpp == 24 or bpp == 32:
             if not (channel == fi.FICC_BLACK or channel == fi.FICC_RED or 
                     channel == fi.FICC_GREEN or channel == fi.FICC_BLUE):
@@ -1436,14 +1443,14 @@ cdef class Image:
         if not fi.FreeImage_GetHistogram(self._dib, hist,
                                       <fi.FREE_IMAGE_COLOR_CHANNEL>channel):
             raise dispatchFIError(OperationError, "Failed to retrieve histogram.")
-        
+
         # TODO: use PyList_New?
         result = []
         for i from 0 <= i < 256:
             result.append(int(hist[i]))
-        
+
         return result
-    
+
     # **********************************************************************
     # draw
     def hline(self, unsigned y, unsigned xstart, signed xend, unsigned linewidth=1,
@@ -1452,13 +1459,13 @@ cdef class Image:
         cdef unsigned width, height, bpp
         cdef fi.RGBQUAD color
         cdef int ys
-        
+
         self._check_closed()
         image_type = fi.FreeImage_GetImageType(self._dib)
         width = fi.FreeImage_GetWidth(self._dib)
         height = fi.FreeImage_GetHeight(self._dib)
         bpp = fi.FreeImage_GetBPP(self._dib)
-        
+
         if y > height:
             raise ValueError("y must be smaller than height of image")
         if xend == -1:
@@ -1467,7 +1474,7 @@ cdef class Image:
             raise ValueError("x start must be smaller than x end")
         if linewidth < 0 or linewidth >= height:
             raise ValueError("Invalid line height")
-        
+
         ys = y
         if linewidth > 2:
             ys -= linewidth / 2
@@ -1475,7 +1482,7 @@ cdef class Image:
             ys = 0
         if ys + linewidth > height:
             ys -= (ys + linewidth) - height
-        
+
         if image_type == fi.FIT_BITMAP and bpp == 24:
             color.rgbBlue = blue
             color.rgbRed = red
@@ -1496,7 +1503,7 @@ cdef class Image:
     cdef int hline_rgb24(self, fi.RGBQUAD *color, unsigned linewidth,
                    unsigned y0, unsigned xs, unsigned xe):
         """Horizontal line for RGB images
-        
+
         Draws line on coordinate y from xs to xe
         """
         cdef fi.BYTE *pixel
@@ -1516,7 +1523,7 @@ cdef class Image:
     cdef int hline_mono(self, fi.BYTE color, unsigned linewidth,
                    unsigned y0, unsigned xs, unsigned xe):
         """Horizontal line for mono color images
-        
+
         Draws line on coordinate y from xs to xe
         """
         cdef fi.BYTE *pixel
@@ -1559,13 +1566,13 @@ cdef class Image:
         cdef unsigned width, height, bpp
         cdef fi.RGBQUAD color
         cdef int xs
-        
+
         self._check_closed()
         image_type = fi.FreeImage_GetImageType(self._dib)
         width = fi.FreeImage_GetWidth(self._dib)
         height = fi.FreeImage_GetHeight(self._dib)
         bpp = fi.FreeImage_GetBPP(self._dib)
-        
+
         if x > width:
             raise ValueError("x must be smaller than width of image")
         if yend == -1:
@@ -1574,7 +1581,7 @@ cdef class Image:
             raise ValueError("y start must be smaller than y end")
         if linewidth < 0 or linewidth >= width:
             raise ValueError("Invalid line width")
-        
+
         xs = x
         if linewidth > 2:
             xs -= linewidth / 2
@@ -1582,12 +1589,12 @@ cdef class Image:
             xs = 0
         if xs + linewidth > width:
             xs -= (xs + linewidth) - width
-            
+
         #if xs < 0 or (xs + linewidth) > width:
         #    raise ValueError("xs: %s, width: %s" % (xs, width))
         #if ystart < 0 or yend > height:
         #    raise ValueError
-        
+
         if image_type == fi.FIT_BITMAP and bpp == 24:
             color.rgbBlue = blue
             color.rgbRed = red
@@ -1605,17 +1612,17 @@ cdef class Image:
             raise NotImplementedError("vline for type: %i, bpp:  %i" %
                                       (image_type, bpp))
 
- 
+
     cdef int vline_rgb24(self, fi.RGBQUAD *color, unsigned linewidth,
                    unsigned x0, unsigned ys, unsigned ye):
         """Vertical line for RGB images
-        
+
         Draws line on coordinate y from xs to xe
         """
         cdef fi.BYTE *pixel
         cdef unsigned x, y
         cdef fi.FIBITMAP* dib = self._dib
-        
+
         with nogil:
             for y from ys <= y < ye:
                 pixel = fi.FreeImage_GetScanLine(dib, y)
@@ -1630,13 +1637,13 @@ cdef class Image:
     cdef int vline_mono(self, fi.BYTE color, unsigned linewidth,
                    unsigned x0, unsigned ys, unsigned ye):
         """Vertical line for mono color images
-        
+
         Draws line on coordinate y from xs to xe
         """
         cdef fi.BYTE *pixel
         cdef unsigned x, y
         cdef fi.FIBITMAP* dib = self._dib
-        
+
         with nogil:
             for y from ys <= y < ye:
                 pixel = fi.FreeImage_GetScanLine(dib, y)
@@ -1672,7 +1679,7 @@ cdef class Image:
 
 def FormatInfo_from_filename(cls, char *filename):
     """from_filename(filename) -> FormatInfo instance
-    
+
     Guess format from filename
     """
     format = fi.FreeImage_GetFIFFromFilename(filename)
@@ -1680,7 +1687,7 @@ def FormatInfo_from_filename(cls, char *filename):
 
 def FormatInfo_from_file(cls, char *filename):
     """from_file(path) -> FormatInfo instance
-    
+
     Guess format from file
     """
     format = fi.FreeImage_GetFileType(filename, 0)
@@ -1688,7 +1695,7 @@ def FormatInfo_from_file(cls, char *filename):
 
 def FormatInfo_from_mimetype(cls, char *mime):
     """from_mimetype(mime) -> FormatInfo instance
-    
+
     Guess format from mime type string
     """
     format = fi.FreeImage_GetFIFFromMime(mime)
@@ -1696,7 +1703,7 @@ def FormatInfo_from_mimetype(cls, char *mime):
 
 cdef class FormatInfo:
     cdef fi.FREE_IMAGE_FORMAT _format
-    
+
     def __init__(self, int format):
         if format == fi.FIF_UNKNOWN:
             raise dispatchFIError(OperationError, "Unable to detect format.")
@@ -1707,14 +1714,14 @@ cdef class FormatInfo:
     from_filename = classmethod(FormatInfo_from_filename)
     from_file = classmethod(FormatInfo_from_file)
     from_mimetype = classmethod(FormatInfo_from_mimetype)
-    
+
     def __int__(self):
         return self._format
-        
+
     property format:
         def __get__(self):
             return self._format
-        
+
     property mimetype:
         def __get__(self):
             return fi.FreeImage_GetFIFMimeType(self._format)
@@ -1722,11 +1729,11 @@ cdef class FormatInfo:
     property name:
         def __get__(self):
             return fi.FreeImage_GetFormatFromFIF(self._format)
-    
+
     property description:
         def __get__(self):
             return fi.FreeImage_GetFIFDescription(self._format)
-    
+
     property magic_reg_expr:
         def __get__(self):
             return fi.FreeImage_GetFIFRegExpr(self._format)
@@ -1738,11 +1745,11 @@ cdef class FormatInfo:
     property supports_writing:
         def __get__(self):
             return fi.FreeImage_FIFSupportsWriting(self._format)
-        
+
     property supports_icc:
         def __get__(self):
             return fi.FreeImage_FIFSupportsICCProfiles(self._format)
-            
+
     property supports_nopixels:
         def __get__(self):
             return fi.FreeImage_FIFSupportsNoPixels(self._format)
@@ -1750,13 +1757,13 @@ cdef class FormatInfo:
     def getExtensions(self):
         exts = fi.FreeImage_GetFIFExtensionList(self._format)
         return exts.split(',')
-    
+
     def getSupportsExportType(self, int type):
         if type < 0 or type > fi.FIT_RGBAF:
             raise ValueError("Invalid type %i" % type)
         return fi.FreeImage_FIFSupportsExportType(self._format, 
                                                <fi.FREE_IMAGE_TYPE>type)            
-        
+
     def getSupportsExportBPP(self, int bpp):
         return fi.FreeImage_FIFSupportsExportBPP(self._format, bpp)            
 
@@ -1764,7 +1771,7 @@ cdef class FormatInfo:
 #--- module functions
 def getVersion():
     """getVersion() -> str
-    
+
     Get version of loaded freeimage library
     """
     return fi.FreeImage_GetVersion()
@@ -1775,7 +1782,7 @@ def getCompiledFor():
     return (fi.FREEIMAGE_MAJOR_VERSION, 
             fi.FREEIMAGE_MINOR_VERSION,
             fi.FREEIMAGE_RELEASE_SERIAL)
-    
+
 def getCopyright():
     """getCopyright() -> str
     """
@@ -1801,12 +1808,12 @@ def lookupSVGColor(char *name):
     if not fi.FreeImage_LookupSVGColor(name, &red, &green, &blue):
         raise dispatchFIError(OperationError, "Cannot lookup SVG color %s" % name)
     return (red, green, blue)
-        
+
 def jpegTransform(char *src, char *dst, unsigned int op, unsigned int perfect=0):
     """jpegTransform(source: str, destination: str, op: int) -> None
-    
+
     Perform lossless rotation or flipping on a JPEG image
-    
+
     @param src: path to source image
     @type src: str
     @param dst: path to destination file, can be the same file as src
@@ -1819,7 +1826,7 @@ def jpegTransform(char *src, char *dst, unsigned int op, unsigned int perfect=0)
 
     if op > fi.FIJPEG_OP_ROTATE_270:
         raise ValueError("OP not in range 0-7")
-    
+
     with nogil:
         result = fi.FreeImage_JPEGTransform(src, dst, 
                                          <fi.FREE_IMAGE_JPEG_OPERATION>op, perfect) 
@@ -1838,5 +1845,5 @@ cdef void initialize():
     # 0: load all plugins
     fi.FreeImage_Initialise(0)
     initErrorHandler()
-    
+
 initialize()

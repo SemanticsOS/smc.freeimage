@@ -50,7 +50,7 @@ cdef extern from "lcms2.h" nogil:
     ctypedef void* cmsHPROFILE
     ctypedef void* cmsHTRANSFORM
     ctypedef void* cmsContext
-    
+
     ctypedef unsigned int cmsUInt16Number
     ctypedef unsigned long cmsUInt32Number
     ctypedef unsigned long long cmsUInt64Number

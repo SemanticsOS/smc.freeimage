@@ -523,6 +523,12 @@ class TestMultiPage(TestImageBase):
         self.assertEqual(sizes,
                          [(3041, 5334), (3165, 5347), (3041, 5347), (3166, 5354)])
 
+        # check removal of mp object doesn't cause segfault
+        page = mp[0]
+        del mp
+        self.assertEqual(page.dpi, (600, 600))
+        page.close()
+
 
 class TestMetadata(TestImageBase):
     maxDiff = None

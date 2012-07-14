@@ -7,6 +7,13 @@ smc.freeimage.egg-info
 docs/_static/empty
 docs/_templates/empty
 
+smc/freeimage/_freeimage.c
+
+static/FreeImage.h
+static/lcms2.h
+static/libfreeimage.a
+static/liblcms2.a
+
 syntax: glob
 smc/freeimage/_freeimage*.so
 smc/freeimage/ficonstants*.so
@@ -22,7 +29,4 @@ smc/freeimage/lcmsconstants*.dylib
 *.o
 *.pyc
 *.pyo
-
-libfreeimage.a
-liblcms2.a
 

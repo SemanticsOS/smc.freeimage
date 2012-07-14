@@ -919,6 +919,7 @@ cdef class Image:
         Type referes to the data type of the image like fi.FIT_BITMAP or fi.FIT_RGBF.
         """
         def __get__(self):
+            self._check_closed()
             return fi.FreeImage_GetImageType(self._dib)
 
     property mimetype:
@@ -1101,6 +1102,7 @@ cdef class Image:
         @return: True if image has pixel and isn't loaded with fi.FIF_LOAD_NOPIXELS
         """
         def __get__(self):
+            self._check_closed()
             return bool(fi.FreeImage_HasPixels(self._dib))
 
     property closed:
@@ -1440,12 +1442,14 @@ cdef class Image:
     #    Set ICC profile as byte string
     #    """
     #    cdef char *cp = cpython.PyBytes_AsString(profile)
+    #    self._check_closed()
     #    self._icc = fi.FreeImage_CreateICCProfile(self._dib, <char*>cp, len(profile))
 
 
     def removeICC(self):
         """Remove ICC profile
         """
+        self._check_closed()
         self._icc = NULL
         fi.FreeImage_DestroyICCProfile(self._dib)
 
@@ -1453,6 +1457,7 @@ cdef class Image:
     def iccTransform(self, LCMSTransformation trafo=None):
         """Apply an LCMS transformation
         """
+        self._check_closed()
         if trafo is None:
             trafo = LCMSTransformation(self.getICC(), b"sRGB")
         lcmsFI(self, trafo)
@@ -1656,7 +1661,10 @@ cdef class Image:
         """
         cdef fi.BYTE *pixel
         cdef unsigned x, y
-        cdef fi.FIBITMAP* dib = self._dib
+        cdef fi.FIBITMAP* dib
+
+        self._check_closed()
+        dib = self._dib
 
         with nogil:
             for y from y0 <= y < y0+linewidth:
@@ -1676,7 +1684,10 @@ cdef class Image:
         """
         cdef fi.BYTE *pixel
         cdef unsigned x, y
-        cdef fi.FIBITMAP* dib = self._dib
+        cdef fi.FIBITMAP* dib
+
+        self._check_closed()
+        dib = self._dib
 
         with nogil:
             for y from y0 <= y < y0+linewidth:
@@ -1694,7 +1705,10 @@ cdef class Image:
 #        """
 #        cdef fi.BYTE *pixel
 #        cdef unsigned x, y
-#        cdef fi.FIBITMAP* dib = self._dib
+#        cdef fi.FIBITMAP* dib
+#
+#        self._check_closed()
+#        dib = self._dib
 #
 #        # not yet implemented
 #        return 0
@@ -1769,7 +1783,10 @@ cdef class Image:
         """
         cdef fi.BYTE *pixel
         cdef unsigned x, y
-        cdef fi.FIBITMAP* dib = self._dib
+        cdef fi.FIBITMAP* dib
+
+        self._check_closed()
+        dib = self._dib
 
         with nogil:
             for y from ys <= y < ye:
@@ -1790,7 +1807,10 @@ cdef class Image:
         """
         cdef fi.BYTE *pixel
         cdef unsigned x, y
-        cdef fi.FIBITMAP* dib = self._dib
+        cdef fi.FIBITMAP* dib
+
+        self._check_closed()
+        dib = self._dib
 
         with nogil:
             for y from ys <= y < ye:
@@ -1809,7 +1829,10 @@ cdef class Image:
 #        """
 #        cdef fi.BYTE *pixel
 #        cdef unsigned x, y
-#        cdef fi.FIBITMAP* dib = self._dib
+#        cdef fi.FIBITMAP* dib
+#
+#        self._check_closed()
+#        dib = self._dib
 #
 #        # not yet implemented
 #        return 0

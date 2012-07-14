@@ -38,7 +38,7 @@ from logging import getLogger
 
 #--- constants
 __all__ = (
-    "Image", "LCMSTransformation", "LCMSException",
+    "Image", "Multipage", "LCMSTransformation", "LCMSException",
     "FreeImageError", "UnknownImageError", "LoadError", "SaveError", "OperationError",
     "getVersion", "getCompiledFor", "getCopyright", "FormatInfo",
     "getFormatCount", "jpegTransform", "lookupX11Color", "lookupSVGColor",
@@ -610,8 +610,103 @@ cdef int floodfill(fi.FIBITMAP* dib, unsigned red, unsigned green, unsigned blue
         return 0
 
     return ERR_UNSUP
-#--- Image
 
+
+cdef class Multipage:
+    """Multipage image support
+    """
+    cdef fi.FREE_IMAGE_FORMAT _format
+    cdef char* _filename
+    cdef fi.FIMULTIBITMAP* _mp
+
+    def __init__(self, filename, int flags = 0):
+        cdef char* cfilename
+        cdef stdio.FILE *tmpf
+
+        bfilename = _decodeFilename(filename)
+        cfilename = <char*>bfilename
+        # try to open the file - will raise an exception if file can't be read
+        tmpf = stdio.fopen(cfilename, "r")
+        if tmpf == NULL:
+            cpython.PyErr_SetFromErrnoWithFilename(IOError, bfilename)
+        else:
+            stdio.fclose(tmpf)
+
+        self._filename = cfilename
+        self._format = fi.FreeImage_GetFileType(cfilename, 0)
+        if self._format == fi.FIF_UNKNOWN:
+            raise dispatchFIError(UnknownImageError, filename)
+        with nogil:
+            self._mp = fi.FreeImage_OpenMultiBitmap(self._format, self._filename, 
+                                                    False, True, False, flags)
+        if self._mp == NULL:
+            raise dispatchFIError(LoadError, filename)
+
+    def __dealloc__(self):
+        fi.FreeImage_CloseMultiBitmap(self._mp, 0)
+
+    def __len__(self):
+        return fi.FreeImage_GetPageCount(self._mp)
+
+    def __getitem__(self, int page):
+        cdef fi.FIBITMAP* dib
+        cdef Image img
+
+        if page >= fi.FreeImage_GetPageCount(self._mp):
+            raise KeyError(page)
+
+        dib = fi.FreeImage_LockPage(self._mp, page)
+        if dib == NULL:
+            raise dispatchFIError(LoadError, "page %i" % page)
+        img = Image(_bitmap=DibWrapper(dib, None))
+        img._mp = self
+        return img
+
+    def __iter__(self):
+        for page in range(len(self)):
+            yield self[page]
+
+    property filename:
+        """filename
+        """
+        def __get__(self):
+            return funicode(self._filename)
+
+    property size:
+        """size -> (widht: int, height: int)
+        """
+        def __get__(self):
+            return self.width, self.height
+
+    property format:
+        """format -> int (fi.FIF_*)
+
+        Format is the image format like fi.FIF_JPEG or fi.FIF_PNG.
+        """
+        def __get__(self):
+            return self._format
+
+    def getLockedPageNumbers(self):
+        cdef int count
+        cdef int* pages
+        cdef int i
+
+        if not fi.FreeImage_GetLockedPageNumbers(self._mp, NULL, &count):
+            raise dispatchFIError(FreeImageError, "GetLockedPageNumbers")
+
+        pages = <int*>stdlib.malloc(count * sizeof(int))
+        if not fi.FreeImage_GetLockedPageNumbers(self._mp, pages, &count):
+            raise dispatchFIError(FreeImageError, "GetLockedPageNumbers")
+
+        result = []
+        for i from 0 <= i < count:
+            result.append(pages[i])
+
+        stdlib.free(pages)
+        return sorted(result)
+
+
+#--- Image
 cdef void removeAllMetadata(fi.FIBITMAP *dib):
     """Remove ICC profile and metadata
     """
@@ -656,6 +751,8 @@ cdef class Image:
     cdef unsigned int buffers
     cdef fi.FIBITMAP* _dib
     cdef fi.FIICCPROFILE* _icc
+    cdef Multipage _mp
+    cdef bint _changed
 
     def __init__(self, filename=None, buffer=None, _DibWrapper _bitmap = None,
                   int fd=-2, int flags = 0):
@@ -738,6 +835,8 @@ cdef class Image:
         self.width = fi.FreeImage_GetWidth(self._dib)
         self.height = fi.FreeImage_GetHeight(self._dib)
         self._icc = NULL
+        self._mp = None
+        self._changed = False
 
     def close(self):
         """close() -> None
@@ -748,10 +847,15 @@ cdef class Image:
         if self.buffers:
             raise dispatchFIError(OperationError, "Image is still access from %i buffer%s." %
                                  (self.buffers, 's' if self.buffers > 1 else ''))
-        if self._dib:
-            with nogil:
-                fi.FreeImage_Unload(self._dib)
-                self._dib = NULL
+        if self._dib is not NULL:
+            if self._mp is None:
+                # not member of a multipage bitmap
+                with nogil:
+                    fi.FreeImage_Unload(self._dib)
+                    self._dib = NULL
+            else:
+                with nogil:
+                    fi.FreeImage_UnlockPage(self._mp._mp, self._dib, self._changed)
 
     def __dealloc__(self):
         self.close()

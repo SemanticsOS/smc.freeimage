@@ -39,7 +39,7 @@ from pprint import pprint
 
 from smc.freeimage import *
 from smc.freeimage import ficonstants as fi
-from smc.freeimage.tests.common import owner, IMG, TIFF, TIFF2, BITON
+from smc.freeimage.tests.common import owner, IMG, TIFF, TIFF2, BITON, MULTIPAGE
 
 
 class TestImageBase(unittest2.TestCase):
@@ -501,6 +501,29 @@ class TestImageBuffer(TestImageBase):
         self.img.close()
 
 
+class TestMultiPage(TestImageBase):
+    def test_multipage(self):
+        mp = Multipage(MULTIPAGE)
+        self.assertEqual(len(mp), 4)
+        self.assertEqual(mp.filename, MULTIPAGE)
+        self.assertEqual(mp.format, FI_FORMAT.FIF_TIFF)
+        self.assertEqual(len(list(mp)), 4)
+        self.assertEqual(mp.getLockedPageNumbers(), [])
+
+        page = mp[0]
+        self.assertEqual(mp.getLockedPageNumbers(), [0])
+        page = mp[1]
+        self.assertEqual(mp.getLockedPageNumbers(), [1])
+        page2 = mp[2]
+        self.assertEqual(mp.getLockedPageNumbers(), [1, 2])
+        page.close(), page2.close()
+        self.assertEqual(len(list(mp)), 4)
+        self.assertEqual(mp.getLockedPageNumbers(), [])
+        sizes = [img.size for img in mp]
+        self.assertEqual(sizes,
+                         [(3041, 5334), (3165, 5347), (3041, 5347), (3166, 5354)])
+
+
 class TestMetadata(TestImageBase):
     maxDiff = None
 
@@ -734,6 +757,7 @@ def test_main():
     suite = unittest2.TestSuite()
     suite.addTest(unittest2.defaultTestLoader.loadTestsFromTestCase(TestImage))
     suite.addTest(unittest2.defaultTestLoader.loadTestsFromTestCase(TestMetadata))
+    suite.addTest(unittest2.defaultTestLoader.loadTestsFromTestCase(TestMultiPage))
     if sys.version_info < (3, 0):
         suite.addTest(unittest2.defaultTestLoader.loadTestsFromTestCase(TestImageBuffer))
     return suite
@@ -748,9 +772,10 @@ def test_memory():
 
 if __name__ == "__main__": # pragma: no cover
     suite = unittest2.TestSuite()
+    suite.addTest(TestMultiPage("test_multipage"))
     #suite.addTest(TestMetadata("test_icc"))
     #suite.addTest(TestImage("test_rotation"))
     #suite.addTest(TestImage("test_toBuffer_PIL"))
     #suite.addTest(TestMetadata("test_metadata"))
-    suite = test_main()
+    #suite = test_main()
     unittest2.TextTestRunner(verbosity=2).run(suite)

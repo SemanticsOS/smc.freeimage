@@ -1,3 +1,11 @@
+smc.freeimage 0.2
+=================
+
+*Release date: **-***-2012*
+
+- implemented simple and read-only multipage image support
+
+
 smc.freeimage 0.1
 =================
 

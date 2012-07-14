@@ -5,6 +5,8 @@ Installing smc.freeimage
 ..
    1  Requirements
    2  Installation
+   3  Static build
+
 
 Requirements
 ------------
@@ -24,3 +26,18 @@ Installation
 -------------
 
 $ python setup.py install
+
+
+Static build
+------------
+
+smc.freeimage supports static linking against libfreeimage.a and liblcms2.a.
+In order to create a static build you have to compile LCMS2 with::
+
+  ./configure --with-pic --enable-static && make
+
+Then copy lcms2-2.3/src/.libs/liblcms2.a, lcms2-2.3/include/lcms2.h,
+FreeImage/Dist/libfreeimage.a and FreeImage/Dist/FreeImage.h into the root 
+folder of the project next to setup.py and run::
+
+  $ python setup.py install --static

@@ -29,10 +29,15 @@ import shutil
 import struct
 from glob import glob
 
+HERE = os.path.dirname(os.path.abspath(__file__))
 IS_WINDOWS = (sys.platform == "win32")
 IS_64 = (struct.calcsize("P") * 8 == 64)
 VLS_ENV = os.environ.get("VLS_ENV")
-STATIC = "--static" in sys.argv
+if "--static" in sys.argv:
+    sys.argv.remove("--static")
+    STATIC = True
+else:
+    STATIC = False
 
 import Cython.Distutils
 from Cython.Distutils import build_ext
@@ -83,7 +88,7 @@ def addshared():
     """Link against shared libfreeimage(turbo) and LCMS2 libs
     """
     # try to find freeimage with libjpeg-turbo
-    turbo = findlib("freeimageturbo", fi_ext_extras["library_dirs"])
+    turbo = findlib("freeimageturbo", fi_ext_extras.get("library_dirs"))
     if turbo:
         print("*** FreeImage with libjpeg-turbo found at %s, using turbo" % turbo)
         merge(libraries=["freeimageturbo"],
@@ -108,7 +113,8 @@ def addstatic():
         merge(define_macros=[("FREEIMAGE_TURBO", 0)])
     fi_ext_extra_objects.append("liblcms2.a")
     # FreeImage needs C++ standard library
-    merge(libraries=["stdc++"])
+    merge(libraries=["stdc++"],
+          include_dirs=[HERE])
 
 
 def merge(**kwargs):

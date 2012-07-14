@@ -16,6 +16,9 @@ COMPILEFLAGS=
 inplace:
 	$(PYTHON) setup.py $(SETUPFLAGS) build_ext -i $(COMPILEFLAGS)
 
+static:
+	$(PYTHON) setup.py $(SETUPFLAGS) build_ext -i --static $(COMPILEFLAGS)
+
 all: inplace
 
 rebuild: clean all

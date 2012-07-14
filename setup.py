@@ -97,7 +97,8 @@ def addshared():
         print("*** FreeImage with libjpeg-turbo not found")
         merge(libraries=["freeimage"],
               define_macros=[("FREEIMAGE_TURBO", 0)])
-    merge(libraries=["lcms2"])
+    merge(libraries=["lcms2"],
+          define_macros=[("CMS_DLL", "1")])
 
 
 def addstatic():
@@ -105,16 +106,16 @@ def addstatic():
 
     binaries must be compiled with -fPIC
     """
-    if os.path.isfile("libfreeimageturbo.a"):
-        fi_ext_extra_objects.append("libfreeimageturbo.a")
+    if os.path.isfile("static/libfreeimageturbo.a"):
+        fi_ext_extra_objects.append("static/libfreeimageturbo.a")
         merge(define_macros=[("FREEIMAGE_TURBO", 1)])
     else:
-        fi_ext_extra_objects.append("libfreeimage.a")
+        fi_ext_extra_objects.append("static/libfreeimage.a")
         merge(define_macros=[("FREEIMAGE_TURBO", 0)])
-    fi_ext_extra_objects.append("liblcms2.a")
+    fi_ext_extra_objects.append("static/liblcms2.a")
     # FreeImage needs C++ standard library
     merge(libraries=["stdc++"],
-          include_dirs=[HERE])
+          include_dirs=["static"])
 
 
 def merge(**kwargs):
@@ -128,7 +129,6 @@ if IS_WINDOWS:
     merge(include_dirs=["windows"],
           library_dirs=["windows/x86"] if not IS_64 else ["windows/x86_64"],
           libraries=["user32"],
-          define_macros=[("CMS_DLL", "1")],
           extra_link_args=["/NODEFAULTLIB:libcmt"])
 else:
     merge(# LCMS2 requires a C99 compiler, add debug symbols

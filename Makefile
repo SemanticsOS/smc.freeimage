@@ -13,6 +13,10 @@ PYTHON=python2.7
 SETUPFLAGS=
 COMPILEFLAGS=
 
+.PHONY: inplace static all rebuild test_inplace test valgrind clean realclean 
+.PHONY: egg_info egg develop sdist pxd benchmark
+
+
 inplace:
 	$(PYTHON) setup.py $(SETUPFLAGS) build_ext -i $(COMPILEFLAGS)
 
@@ -56,7 +60,7 @@ develop: egg_info inplace
 sdist: egg_info
 	$(PYTHON) setup.py sdist
  
-pxd:  
+pxd:
 	$(PYTHON) fi2pxd.py
 	$(PYTHON) lcms2pxd.py
 

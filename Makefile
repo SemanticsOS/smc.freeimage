@@ -44,6 +44,7 @@ egg_info:
 	$(PYTHON) setup.py egg_info
 
 egg: egg_info inplace
+	rm -rf smc.freeimage.egg-info
 	$(PYTHON) setup.py bdist_egg
 
 develop: egg_info inplace

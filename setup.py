@@ -128,7 +128,7 @@ if os.path.isfile("smc/freeimage/_freeimage.c"):
 
 setup_info = dict(
     name="smc.freeimage",
-    version="0.1",
+    version="0.1.20120714",
     ext_modules=[
         Extension("smc.freeimage._freeimage", ["smc/freeimage/_freeimage.pyx"],
                   **fi_ext_extras),

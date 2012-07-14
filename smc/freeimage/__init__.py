@@ -29,5 +29,12 @@ import struct
 iswindows = (sys.platform == "win32")
 is64 = (struct.calcsize("P") * 8 == 64)
 
+from smc.freeimage import _freeimage
+from smc.freeimage import enums
+from smc.freeimage import ficonstants
+from smc.freeimage import lcmsconstants
+
 from smc.freeimage._freeimage import *
 from smc.freeimage.enums import *
+
+__all__ = ("ficonstants", "lcmsconstants") + _freeimage.__all__ + enums.__all__

@@ -29,23 +29,24 @@ import shutil
 import struct
 from glob import glob
 
-iswindows = (sys.platform == "win32")
-is64 = (struct.calcsize("P") * 8 == 64)
+IS_WINDOWS = (sys.platform == "win32")
+IS_64 = (struct.calcsize("P") * 8 == 64)
 VLS_ENV = os.environ.get("VLS_ENV")
+STATIC = "--static" in sys.argv
 
 import Cython.Distutils
 from Cython.Distutils import build_ext
-# aliases for 
+# aliases for setuptools
 sys.modules["Pyrex"] = Cython
 sys.modules["Pyrex.Distutils"] = Cython.Distutils
 
+
 try:
-    import setuptools
+    from setuptools import setup
 except ImportError:
     from distutils.core import setup
     from distutils.extension import Extension
 else:
-    from setuptools import setup
     from setuptools.extension import Extension
 
 from distutils.dep_util import newer_group
@@ -62,12 +63,11 @@ def findlib(libname, library_dirs=None, **kwargs):
     if compiler.library_dirs:
         dirs.etend(compiler.library_dirs)
     dirs.extend(["/lib", "/usr/lib"])
-    if is64:
+    if IS_64:
         dirs.extend(["/lib64", "/usr/lib64", "/usr/local/lib64"])
     else:
         dirs.extend(["/lib32", "/usr/lib32", "/usr/local/lib32"])
     return compiler.find_library_file(dirs, libname)
-
 
 fi_ext_extras = dict(
     depends=["smc/freeimage/freeimage.pxd",
@@ -76,6 +76,40 @@ fi_ext_extras = dict(
              "smc/freeimage/smc_fi.pxd",
              "smc/freeimage/smc_fi.h"],
     )
+fi_ext_extra_objects = []
+
+
+def addshared():
+    """Link against shared libfreeimage(turbo) and LCMS2 libs
+    """
+    # try to find freeimage with libjpeg-turbo
+    turbo = findlib("freeimageturbo", fi_ext_extras["library_dirs"])
+    if turbo:
+        print("*** FreeImage with libjpeg-turbo found at %s, using turbo" % turbo)
+        merge(libraries=["freeimageturbo"],
+              define_macros=[("FREEIMAGE_TURBO", 1)])
+    else:
+        print("*** FreeImage with libjpeg-turbo not found")
+        merge(libraries=["freeimage"],
+              define_macros=[("FREEIMAGE_TURBO", 0)])
+    merge(libraries=["lcms2"])
+
+
+def addstatic():
+    """Link against shared libfreeimage(turbo) and LCMS2 libs
+
+    binaries must be compiled with -fPIC
+    """
+    if os.path.isfile("libfreeimageturbo.a"):
+        fi_ext_extra_objects.append("libfreeimageturbo.a")
+        merge(define_macros=[("FREEIMAGE_TURBO", 1)])
+    else:
+        fi_ext_extra_objects.append("libfreeimage.a")
+        merge(define_macros=[("FREEIMAGE_TURBO", 0)])
+    fi_ext_extra_objects.append("liblcms2.a")
+    # FreeImage needs C++ standard library
+    merge(libraries=["stdc++"])
+
 
 def merge(**kwargs):
     """Merge config values with fi_ext_extras
@@ -83,40 +117,29 @@ def merge(**kwargs):
     for key, values in kwargs.items():
         fi_ext_extras.setdefault(key, []).extend(values)
 
-if iswindows:
-    merge(include_dirs=["windows"],
-          library_dirs=["windows/x86"] if not is64 else ["windows/x86_64"],
-          libraries=["lcms2", "user32"], # "freeimage" later
-          define_macros=[("CMS_DLL", "1")],
-          extra_link_args=["/NODEFAULTLIB:libcmt"]
-    )
-else:
-    merge(libraries=["lcms2"], # "freeimage" later
-          # LCMS2 requires a C99 compiler, add debug symbols
-          extra_compile_args=["-std=gnu99", "-g", "-O2"],
-          define_macros=[],
-          extra_link_args=["-g"]
-    )
 
+if IS_WINDOWS:
+    merge(include_dirs=["windows"],
+          library_dirs=["windows/x86"] if not IS_64 else ["windows/x86_64"],
+          libraries=["user32"],
+          define_macros=[("CMS_DLL", "1")],
+          extra_link_args=["/NODEFAULTLIB:libcmt"])
+else:
+    merge(# LCMS2 requires a C99 compiler, add debug symbols
+          extra_compile_args=["-std=gnu99", "-g", "-O2"],
+          extra_link_args=["-g"])
+
+# custom code for Visual Library
 if VLS_ENV is not None:
     merge(include_dirs=[os.path.join(VLS_ENV, "include")],
           library_dirs=[os.path.join(VLS_ENV, "lib")],
-          #rpath=[os.path.join(VLS_ENV, "lib")],
-    )
+          runtime_library_dirs=[os.path.join(VLS_ENV, "lib")])
 
-# try to find freeimage with libjpeg-turbo
-turbo = findlib("freeimageturbo", **fi_ext_extras)
-if turbo:
-    print("*** FreeImage with libjpeg-turbo found at %s, using turbo" % turbo)
-    merge(libraries=["freeimageturbo"],
-          define_macros=[("FREEIMAGE_TURBO", 1)]
-    )
+# build static or shared extension?
+if STATIC:
+    addstatic()
 else:
-    print("*** FreeImage with libjpeg-turbo not found")
-    merge(libraries=["freeimage"],
-          define_macros=[("FREEIMAGE_TURBO", 0)]
-    )
-
+    addshared()
 
 # Cython and distutils sometimes don't pick up that _freeimage.c is outdated
 if os.path.isfile("smc/freeimage/_freeimage.c"):
@@ -131,19 +154,15 @@ setup_info = dict(
     version="0.1.20120714",
     ext_modules=[
         Extension("smc.freeimage._freeimage", ["smc/freeimage/_freeimage.pyx"],
-                  **fi_ext_extras),
+                  extra_objects=fi_ext_extra_objects, **fi_ext_extras),
         Extension("smc.freeimage.ficonstants", ["smc/freeimage/ficonstants.c"],
                   **fi_ext_extras),
         Extension("smc.freeimage.lcmsconstants", ["smc/freeimage/lcmsconstants.c"],
-                  **fi_ext_extras),
-    ],
+                  **fi_ext_extras)
+        ],
     setup_requires=["setuptools>=0.6c11", "Cython>=0.16"],
     packages=["smc.freeimage"],
     namespace_packages=["smc"],
-    #package_data = {
-    #    "smc.freeimage.tests": ["*.jpg", "*.tiff"],
-    #    "smc.freeimage": ["*.c", "*.px?", "*.pyx"],
-    #    },
     zip_safe=False,
     cmdclass={"build_ext": build_ext},
     author="semantics GmbH / Christian Heimes",
@@ -177,8 +196,8 @@ setup_info = dict(
     ),
 )
 
-if iswindows:
-    if is64:
+if IS_WINDOWS:
+    if IS_64:
         shutil.copy("windows/x86_64/FreeImage.dll", "smc/freeimage/")
         shutil.copy("windows/x86_64/lcms2.dll", "smc/freeimage/")
     else:
@@ -191,7 +210,7 @@ if iswindows:
 
 setup(**setup_info)
 
-#if iswindows:
+#if IS_WINDOWS:
 #    os.unlink("smc/freeimage/FreeImage.dll")
 #    os.unlink("smc/freeimage/lcms2.dll")
 

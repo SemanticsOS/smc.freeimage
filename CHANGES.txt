@@ -5,6 +5,8 @@ smc.freeimage 0.2
 
 - implemented simple and read-only multipage image support
 
+- added support for static linking of libfreeimage and liblcms2
+
 
 smc.freeimage 0.1
 =================

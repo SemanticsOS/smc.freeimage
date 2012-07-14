@@ -23,3 +23,6 @@ smc/freeimage/lcmsconstants*.dylib
 *.pyc
 *.pyo
 
+libfreeimage.a
+liblcms2.a
+

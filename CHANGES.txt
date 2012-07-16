@@ -7,6 +7,8 @@ smc.freeimage 0.2
 
 - added support for static linking of libfreeimage and liblcms2
 
+- added binary and errors arguments to getMetadata()
+
 
 smc.freeimage 0.1
 =================

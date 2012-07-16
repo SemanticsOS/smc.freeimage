@@ -63,7 +63,7 @@ cdef extern from "smc_fi.h" nogil:
     ctypedef fi.FIBITMAP* (*FI_ConvertFunction)(fi.FIBITMAP *dib)
     int FREEIMAGE_TURBO
 
-cdef object funicode(smc_fi.const_char_ptr s):
+cdef object funicode(smc_fi.const_char_ptr s, errors="strict"):
     """Unicode helper from lxml's apihelpers.pxi
     """
     cdef Py_ssize_t slen
@@ -71,7 +71,7 @@ cdef object funicode(smc_fi.const_char_ptr s):
     cdef bint is_non_ascii
     if smc_fi.IS_PYTHON3:
         slen = string.strlen(s)
-        return s[:slen].decode('UTF-8')
+        return s[:slen].decode("utf-8", errors)
     spos = s
     is_non_ascii = 0
     while spos[0] != c'\0':
@@ -83,7 +83,7 @@ cdef object funicode(smc_fi.const_char_ptr s):
         spos += 1
     slen = spos - s
     if is_non_ascii:
-        return s[:slen].decode('UTF-8')
+        return s[:slen].decode("utf-8", errors)
     return <bytes>s[:slen]
 
 cdef bytes _decodeFilename(object filename):
@@ -1476,8 +1476,11 @@ cdef class Image:
             counts[name] = int(fi.FreeImage_GetMetadataCount(model, self._dib))
         return counts
 
-    def getMetadata(self):
+    def getMetadata(self, binary=False, errors="strict"):
         """getMetadata() -> dict
+
+        @param binary: if true, return values as binary instead of unicode string
+        @param strict: encoding error handling for unicode string conversion
         """
         cdef fi.FIMETADATA *handle = NULL
         cdef fi.FITAG *tag
@@ -1494,10 +1497,14 @@ cdef class Image:
                 key = <char *>fi.FreeImage_GetTagKey(tag)
                 string = <char *>fi.FreeImage_TagToString(model, tag, NULL)
                 descr = <char *>fi.FreeImage_GetTagDescription(tag)
-                if descr != NULL:
-                    meta[funicode(key)] = funicode(string), funicode(descr)
+                if binary:
+                    value = string
                 else:
-                    meta[funicode(key)] = funicode(string), None
+                    value = funicode(string)
+                if descr != NULL:
+                    meta[funicode(key)] = value, funicode(descr)
+                else:
+                    meta[funicode(key)] = value, None
                 if not fi.FreeImage_FindNextMetadata(handle, &tag):
                     fi.FreeImage_FindCloseMetadata(handle)
                     break
@@ -1589,12 +1596,12 @@ cdef class Image:
         elif bpp == 8:
             if channel != fi.FICC_BLACK:
                 raise ValueError("8 bpp image supports histogram for black "
-                                "channel only, got %i." % channel)
+                                 "channel only, got %i." % channel)
         else:
             raise ValueError("%i bpp is not supported by histogram function."
                              % bpp)
         if not fi.FreeImage_GetHistogram(self._dib, hist,
-                                      <fi.FREE_IMAGE_COLOR_CHANNEL>channel):
+                                         <fi.FREE_IMAGE_COLOR_CHANNEL>channel):
             raise dispatchFIError(OperationError, "Failed to retrieve histogram.")
 
         # TODO: use PyList_New?

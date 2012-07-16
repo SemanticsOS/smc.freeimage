@@ -592,6 +592,40 @@ class TestMetadata(TestImageBase):
             }
             )
 
+        meta = tiff.getMetadata(binary=True)
+        for k, v in kw.items():
+            for k2, v2 in v.items():
+                if v2 is None:
+                    meta[k].pop(k2, None)
+                else:
+                    meta[k][k2] = v2[0].encode("utf-8"), v2[1]
+
+        self.assertEqual(meta,
+            {'FIMD_EXIF_MAIN':
+                {'Software': (b'ImageGear Version:  13.05.001', 'Software used'),
+                 'InterColorProfile': (b'', None),
+                 'DateTime': (b'2007:07:23 14:19:45', 'File change date and time'),
+                 'Artist': (b'Zeutschel Omniscan 11', 'Person who created the image'),
+                 'BitsPerSample': (b'8', 'Number of bits per component'),
+                 'Compression': (b'LZW (5)', 'Compression scheme'),
+                 'FillOrder': (b'1', None),
+                 'ImageLength': (b'1618', 'Image height'),
+                 'ImageWidth': (b'1136', 'Image width'),
+                 'InterColorProfile': (b'', None),
+                 #'Orientation': ('top, left side', 'Orientation of image'),
+                 'PhotometricInterpretation': (b'2', 'Pixel composition'),
+                 'PlanarConfiguration': (b'1', 'Image data arrangement'),
+                 'ResolutionUnit': (b'inches', 'Unit of X and Y resolution'),
+                 'RowsPerStrip': (b'2', 'Number of rows per strip'),
+                 'SamplesPerPixel': (b'3', 'Number of components'),
+                 'StripByteCounts': (b'6697', 'Bytes per compressed strip'),
+                 'StripOffsets': (b'8', 'Image data location'),
+                 'XResolution': (b'300', 'Image resolution in width direction'),
+                 'YResolution': (b'300', 'Image resolution in height direction'),
+                 }
+            }
+            )
+
         count = tiff.getMetadataCount()
         for k, v in kw.items():
             for k2, v2 in v.items():

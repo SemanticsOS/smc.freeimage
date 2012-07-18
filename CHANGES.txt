@@ -9,7 +9,7 @@ smc.freeimage 0.2
 
 - added binary and errors arguments to getMetadata()
 
-- implemented PEP-3118 buffer interface for 8bits per color bitmaps (RGB, grey)
+- implemented PEP-3118 buffer interface for all image types.
 
 - added getColor* functions to get shift, mask and order of RGBA
   and 16bit image pixel data.

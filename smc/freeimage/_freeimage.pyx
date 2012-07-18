@@ -905,7 +905,7 @@ cdef class Image:
         cdef unsigned bitspp
         cdef fi.FREE_IMAGE_TYPE image_type
         cdef Py_ssize_t width, height, pitch
-        cdef Py_ssize_t itemsize = 0, pixelsize = 0
+        cdef Py_ssize_t itemsize = 0, pixelcount = 0
 
         self._check_closed()
 
@@ -919,14 +919,10 @@ cdef class Image:
             raise BufferError("Image has no pixels")
 
         image_type = fi.FreeImage_GetImageType(self._dib)
-        if image_type != fi.FIT_BITMAP:
-            raise BufferError("Buffer only implemented for bitmap")
-
         # cast width, height and pitch to signed size
         width = <Py_ssize_t>fi.FreeImage_GetWidth(self._dib)
         height = <Py_ssize_t>fi.FreeImage_GetHeight(self._dib)
         pitch = <Py_ssize_t>fi.FreeImage_GetPitch(self._dib)
-        bitspp = fi.FreeImage_GetBPP(self._dib)
         # data points to first element of last line in memory
         # the last line in memory is the top line of the image as FreeImage
         # stores pixel data upside down
@@ -936,45 +932,88 @@ cdef class Image:
             # shouldn't be possible, paranoid
             raise BufferError("Can't create buffer of image with zero height or width")
 
-        # 8 bit
-        if bitspp == 24:
-            buffer.format = b"B"
-            pixelsize = 3
-            itemsize = 1
-        elif bitspp == 8:
-            buffer.format = b"B"
-            pixelsize = 1
-            itemsize = 1
-        elif bitspp == 32:
-            buffer.format = b"B"
-            pixelsize = 4
-            itemsize = 1
-        ## 16bit
-        #elif bitspp == 16:
-        #    buffer.format = b"H"
-        #    pixelsize = 2
-        #    itemsize = 2
-        #elif bitspp == 48:
-        #    buffer.format = b"H"
-        #    pixelsize = 3
-        #    itemsize = 2
-        #elif bitspp == 64:
-        #    buffer.format = b"H"
-        #    pixelsize = 4
-        #    itemsize = 2
-        else:
-            raise BufferError("BPP %i not supported yet" % bitspp)
+        # bitmap
+        if image_type == fi.FIT_BITMAP:
+            # 8bit unsigned int
+            bitspp = fi.FreeImage_GetBPP(self._dib)
+            if bitspp == 24:
+                buffer.format = b"B"
+                itemsize = 1
+                pixelcount = 3
+            elif bitspp == 8:
+                buffer.format = b"B"
+                itemsize = 1
+                pixelcount = 1
+            elif bitspp == 32:
+                buffer.format = b"B"
+                itemsize = 1
+                pixelcount = 4
+            elif bitspp == 16:
+                # 555 or 565
+                buffer.format = b"H"
+                itemsize = 2
+                pixelcount = 1
+            else:
+                raise BufferError("Bitmap with %i bpp not supported" % bitspp)
+        elif image_type == fi. FIT_UINT16:
+            buffer.format = b"I"
+            itemsize = 4
+            pixelcount = 1
+        elif image_type == fi. FIT_INT16:
+            buffer.format = b"i"
+            itemsize = 4
+            pixelcount = 1
+        elif image_type == fi. FIT_UINT32:
+            buffer.format = b"Q"
+            itemsize = 8
+            pixelcount = 1
+        elif image_type == fi. FIT_INT32:
+            buffer.format = b"q"
+            itemsize = 8
+            pixelcount = 1
+        elif image_type == fi. FIT_FLOAT:
+            buffer.format = b"f"
+            itemsize = 4
+            pixelcount = 1
+        elif image_type == fi. FIT_DOUBLE:
+            buffer.format = b"d"
+            itemsize = 8
+            pixelcount = 1
+        elif image_type == fi. FIT_COMPLEX:
+            raise BufferError("Complex image not supported yet")
+            #buffer.format = b""
+            #itemsize = 16
+            #pixelcount = 1
+        elif image_type == fi. FIT_RGB16:
+            buffer.format = b"H"
+            itemsize = 2
+            pixelcount = 3
+        elif image_type == fi. FIT_RGBA16:
+            buffer.format = b"H"
+            itemsize = 2
+            pixelcount = 4
+        elif image_type == fi. FIT_RGBF:
+            buffer.format = b"f"
+            itemsize = 4
+            pixelcount = 3
+        elif image_type == fi. FIT_RGBAF:
+            buffer.format = b"f"
+            itemsize = 4
+            pixelcount = 4
+
+        if itemsize == 0 or pixelcount == 0:
+            raise BufferError("Unknown or unsupported image type %i" % image_type)
 
         self._shape[0] = height
         self._shape[1] = width
-        self._shape[2] = pixelsize
+        self._shape[2] = pixelcount
         self._strides[0] = -pitch # negative pitch to compensate for upside down
-        self._strides[1] = pixelsize
+        self._strides[1] = pixelcount
         self._strides[2] = itemsize
 
         buffer.buf = data
         buffer.obj = self
-        buffer.len = width * height * pixelsize * itemsize
+        buffer.len = width * height * pixelcount * itemsize
         buffer.readonly = 0
         buffer.ndim = 3
         buffer.shape = self._shape

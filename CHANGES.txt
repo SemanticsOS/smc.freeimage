@@ -9,6 +9,8 @@ smc.freeimage 0.2
 
 - added binary and errors arguments to getMetadata()
 
+- implemented PEP-3118 buffer interface for 24bpp RGB images
+
 
 smc.freeimage 0.1
 =================

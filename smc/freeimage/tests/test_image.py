@@ -39,20 +39,29 @@ from pprint import pprint
 
 from smc.freeimage import *
 from smc.freeimage import ficonstants as fi
-from smc.freeimage.tests.common import owner, IMG, TIFF, TIFF2, BITON, MULTIPAGE
+from smc.freeimage.tests.common import owner, IMG, TIFF, TIFF2, BITON, MULTIPAGE, BUFFERTEST
+
+try:
+    import numpy
+except ImportError:
+    numpy = None
 
 
 class TestImageBase(unittest2.TestCase):
     image_names = ("img", "tiff") # "biton",
     remove_tmp = True
 
+    image_attrs = ("_img", "_tiff", "_tiff2", "_biton", "_multipage",
+                   "_buffertest")
+
     def setUp(self):
-        self._img = self._tiff = self._tiff2 = self._biton = None
+        for name in self.image_attrs:
+            setattr(self, name, None)
         self.tmpdir = None
 
     def tearDown(self):
         # close images after test
-        for name in ("_img", "_tiff", "_tiff2", "_biton"):
+        for name in self.image_attrs:
             img = getattr(self, name, None)
             if img is not None:
                 img.close()
@@ -85,6 +94,18 @@ class TestImageBase(unittest2.TestCase):
         if self._biton is None:
             self._biton = Image(BITON)
         return self._biton
+
+    @property
+    def multipage(self):
+        if self._multipage is None:
+            self._multipage = Image(MULTIPAGE)
+        return self._multipage
+
+    @property
+    def buffertest(self):
+        if self._buffertest is None:
+            self._buffertest = Image(BUFFERTEST)
+        return self._buffertest
 
     def _test_jpeg(self, img):
         self.assertEqual(img.format, FI_FORMAT.FIF_JPEG)
@@ -420,7 +441,7 @@ class TestImage(TestImageBase):
         self.img.adjustColors(10, 10, 2.0, 1)
 
 
-class TestImageBuffer(TestImageBase):
+class TestImageOldBuffer(TestImageBase):
     @owner("c.heimes")
     def test_toBuffer(self):
         for i in range(10):
@@ -501,9 +522,40 @@ class TestImageBuffer(TestImageBase):
         self.img.close()
 
 
+class TestImageNewBuffer(TestImageBase):
+    @owner("c.heimes")
+    def test_newbuffer(self):
+        img = self.buffertest
+        m = memoryview(img)
+        self.assertRaises(OperationError, img.close)
+        del m
+        img.close()
+
+    @owner("c.heimes")
+    @unittest2.skipIf(numpy is None, "numpy not installed")
+    def test_newbuffer_numpy(self):
+        dt = numpy.dtype(int)
+        img = self.buffertest
+        arr = numpy.asarray(img)
+        rarr = arr[::-1]
+        print rarr
+        expected = numpy.array(
+            [[(0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0)],
+             [(255, 255, 255), (255, 255, 255), (255, 255, 255), (255, 255, 255), (255, 255, 255)],
+             [(80, 80, 80), (112, 112, 112), (160, 160, 160), (192, 192, 192), (240, 240, 240)],
+             [(0, 0, 255), (0, 255, 0), (255, 0, 0), (0, 0, 255), (0, 255, 0)],
+             [(255, 0, 0), (0, 0, 255), (0, 255, 0), (255, 0, 0), (0, 0, 255)],
+             [(0, 255, 0), (255, 0, 0), (0, 0, 255), (0, 255, 0), (255, 0, 0)],
+             [(255, 255, 0), (255, 0, 255), (0, 255, 255), (255, 255, 0), (255, 0, 255)]],
+            dtype=dt)
+        self.assertEqual(rarr, expected)
+        #buf = numpy.ndarray(buffer=m, shape=m.shape, strides=m.strides)
+        #del m
+
+
 class TestMultiPage(TestImageBase):
     def test_multipage(self):
-        mp = Multipage(MULTIPAGE)
+        mp = self.multipagemp = Multipage(MULTIPAGE)
         self.assertEqual(len(mp), 4)
         self.assertEqual(mp.filename, MULTIPAGE)
         self.assertEqual(mp.format, FI_FORMAT.FIF_TIFF)
@@ -799,7 +851,8 @@ def test_main():
     suite.addTest(unittest2.defaultTestLoader.loadTestsFromTestCase(TestMetadata))
     suite.addTest(unittest2.defaultTestLoader.loadTestsFromTestCase(TestMultiPage))
     if sys.version_info < (3, 0):
-        suite.addTest(unittest2.defaultTestLoader.loadTestsFromTestCase(TestImageBuffer))
+        suite.addTest(unittest2.defaultTestLoader.loadTestsFromTestCase(TestImageOldBuffer))
+    suite.addTest(unittest2.defaultTestLoader.loadTestsFromTestCase(TestImageNewBuffer))
     return suite
 
 def test_memory():
@@ -812,7 +865,8 @@ def test_memory():
 
 if __name__ == "__main__": # pragma: no cover
     suite = unittest2.TestSuite()
-    suite.addTest(TestMultiPage("test_multipage"))
+    #suite.addTest(TestMultiPage("test_multipage"))
+    suite.addTest(unittest2.defaultTestLoader.loadTestsFromTestCase(TestImageNewBuffer))
     #suite.addTest(TestMetadata("test_icc"))
     #suite.addTest(TestImage("test_rotation"))
     #suite.addTest(TestImage("test_toBuffer_PIL"))

@@ -748,11 +748,14 @@ cdef class Image:
     cdef readonly unsigned int height
     cdef fi.FREE_IMAGE_FORMAT _format
     cdef char* _filename
-    cdef unsigned int buffers
     cdef fi.FIBITMAP* _dib
     cdef fi.FIICCPROFILE* _icc
     cdef Multipage _mp
     cdef bint _changed
+
+    # buffer interface
+    cdef unsigned int _buffer_count
+    cdef __cythonbufferdefaults__ = {"ndim": 2, "mode": "c"}
 
     def __init__(self, filename=None, buffer=None, _DibWrapper _bitmap = None,
                   int fd=-2, int flags = 0):
@@ -769,7 +772,7 @@ cdef class Image:
             self.from_bitmap(_bitmap)
         if fd != -2:
             self.from_fd(fd, flags)
-        self.buffers = 0
+        self._buffer_count = 0
 
     new = staticmethod(_new_image)
 
@@ -844,9 +847,10 @@ cdef class Image:
         Close the image and free all resources. The close operation fails when
         a buffer is still using the image data.
         """
-        if self.buffers:
+        if self._buffer_count:
             raise dispatchFIError(OperationError, "Image is still access from %i buffer%s." %
-                                 (self.buffers, 's' if self.buffers > 1 else ''))
+                                 (self._buffer_count, 
+                                  's' if self._buffer_count > 1 else ''))
         if self._dib is not NULL:
             if self._mp is None:
                 # not member of a multipage bitmap
@@ -856,6 +860,10 @@ cdef class Image:
             else:
                 with nogil:
                     fi.FreeImage_UnlockPage(self._mp._mp, self._dib, self._changed)
+
+    cdef _check_closed(self):
+        if self._dib == NULL:
+            raise IOError("Operation on closed image")
 
     def __dealloc__(self):
         self.close()
@@ -878,16 +886,82 @@ cdef class Image:
             self.width, self.height, self.bpp, self.mimetype,
             self.color_type_name, id(self))
 
-    cdef _check_closed(self):
-        if self._dib == NULL:
-            raise IOError("Operation on closed image")
 
+    # context wrapper
     def __enter__(self):
         self._check_closed()
         return self
 
     def __exit__(self, exc, value, tb):
         self.close()
+
+    # buffer interface
+    def __getbuffer__(self, cpython.Py_buffer* buffer, int flags):
+        cdef fi.BYTE *data
+        cdef unsigned width, height, pitch, bitspp, bytespp
+        cdef fi.FREE_IMAGE_TYPE image_type
+        cdef Py_ssize_t *shape, *strides
+
+        self._check_closed()
+
+        #if flags & cpython.PyBUF_WRITABLE:
+        #    raise BufferError("Writable buffer not supported")
+
+        #if not flags & cpython.PyBUF_C_CONTIGUOUS and not flags & cpython.PyBUF_ANY_CONTIGUOUS:
+        #    raise BufferError("Didn't request C or ANY contiguous strided buffer")
+
+        if not fi.FreeImage_HasPixels(self._dib):
+            raise BufferError("Image has no pixels")
+
+        image_type = fi.FreeImage_GetImageType(self._dib)
+        bitspp = fi.FreeImage_GetBPP(self._dib)
+        if image_type != fi.FIT_BITMAP or bitspp != 24:
+            raise BufferError("Buffer only implemented for RGB bitmap")
+
+        width = fi.FreeImage_GetWidth(self._dib)
+        height = fi.FreeImage_GetHeight(self._dib)
+        pitch = fi.FreeImage_GetPitch(self._dib)
+        data = fi.FreeImage_GetBits(self._dib)
+        bytespp = bitspp / 8 # bits to bytes
+
+        # malloc arrays for shape and strides
+        buffer.shape = <Py_ssize_t *>stdlib.malloc(sizeof(Py_ssize_t) * 2)
+        if buffer.shape is NULL:
+            raise MemoryError
+
+        buffer.strides = <Py_ssize_t *>stdlib.malloc(sizeof(Py_ssize_t) * 2)
+        if buffer.strides is NULL:
+            stdlib.free(buffer.shape)
+            raise MemoryError
+
+        buffer.buf = data
+        buffer.obj = self
+        buffer.len = <Py_ssize_t>width * <Py_ssize_t>height * <Py_ssize_t>bytespp
+        buffer.readonly = 0
+        buffer.format = b"BBB"
+        buffer.ndim = 2
+        buffer.shape[0] = height
+        buffer.shape[1] = width
+        buffer.strides[0] = pitch
+        buffer.strides[1] = bytespp
+        buffer.suboffsets = NULL
+        buffer.itemsize = <Py_ssize_t>bytespp
+        buffer.internal = NULL
+
+        self._buffer_count += 1
+
+    def __releasebuffer__(self, cpython.Py_buffer* buffer):
+        if buffer.obj is not self:
+            raise BufferError("%r is not %r" % (buffer.obj, self))
+
+        self._buffer_count -= 1
+
+        if buffer.shape:
+            stdlib.free(buffer.shape)
+            buffer.shape = NULL
+        if buffer.strides:
+            stdlib.free(buffer.strides)
+            buffer.strides = NULL
 
 
     # **********************************************************************

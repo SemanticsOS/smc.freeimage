@@ -11,6 +11,9 @@ smc.freeimage 0.2
 
 - implemented PEP-3118 buffer interface for 24bpp RGB images
 
+- added getColor* functions to get shift, mask and order of RGBA
+  and 16bit image pixel data.
+
 
 smc.freeimage 0.1
 =================

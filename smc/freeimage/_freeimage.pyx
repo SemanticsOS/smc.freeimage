@@ -41,6 +41,8 @@ __all__ = (
     "Image", "Multipage", "LCMSTransformation", "LCMSException",
     "FreeImageError", "UnknownImageError", "LoadError", "SaveError", "OperationError",
     "getVersion", "getCompiledFor", "getCopyright", "FormatInfo",
+    "getColorIndexRGBA", "getColorMask555", "getColorMask565", "getColorMaskRGBA",
+    "getColorOrder", "getColorShift555", "getColorShift565", "getColorShiftRGBA",
     "getFormatCount", "jpegTransform", "lookupX11Color", "lookupSVGColor",
     "LCMSIccCache", "LCMSProfileInfo", "XYZ2xyY", "xyY2XYZ", "getIntents", "getLCMSVersion",
     "hasJPEGTurbo",
@@ -637,7 +639,7 @@ cdef class Multipage:
         if self._format == fi.FIF_UNKNOWN:
             raise dispatchFIError(UnknownImageError, filename)
         with nogil:
-            self._mp = fi.FreeImage_OpenMultiBitmap(self._format, self._filename, 
+            self._mp = fi.FreeImage_OpenMultiBitmap(self._format, self._filename,
                                                     False, True, False, flags)
         if self._mp == NULL:
             raise dispatchFIError(LoadError, filename)
@@ -849,7 +851,7 @@ cdef class Image:
         """
         if self._buffer_count:
             raise dispatchFIError(OperationError, "Image is still access from %i buffer%s." %
-                                 (self._buffer_count, 
+                                 (self._buffer_count,
                                   's' if self._buffer_count > 1 else ''))
         if self._dib is not NULL:
             if self._mp is None:
@@ -1226,7 +1228,7 @@ cdef class Image:
 
     def toBuffer(self, int format=-1, int flags=0):
         """toBuffer([format=-1[, flags=0]] -> _MemoryIO instance
-    
+
         Access raw data of the image as read-only buffer or file like object
         """
         if smc_fi.IS_PYTHON3:
@@ -1426,6 +1428,8 @@ cdef class Image:
         if dib == NULL:
             raise dispatchFIError(OperationError, "Failed to applying threshold to image")
         return Image(_bitmap=DibWrapper(dib, self))
+
+
     # **********************************************************************
     # Rotation / mirroring
 
@@ -2048,6 +2052,83 @@ def getFormatCount():
     """
     return fi.FreeImage_GetFIFCount()
 
+def getColorOrder():
+    """Get color order or RGB data
+
+    The color order is platform dependent.
+
+      big endian: RGB(A)
+      little endian: BGR(A)
+
+    Windows and X86 platforms are usually little endian machines while
+    PowerPC is usually big endian. ARM processors support both endianess.
+
+    @return: either "RGB" or "BGR"
+    @rtype: str
+    """
+    if fi.FREEIMAGE_COLORORDER == fi.FREEIMAGE_COLORORDER_RGB:
+        return "RGB"
+    else:
+        return "BGR"
+
+def getColorIndexRGBA():
+    """Get index of RGBA quad
+
+    @return: R, G, B, A
+    @rtype: tuple of four ints
+    """
+    return fi.FI_RGBA_RED, fi.FI_RGBA_GREEN, fi.FI_RGBA_BLUE, fi.FI_RGBA_ALPHA
+
+def getColorMaskRGBA():
+    """Get color mask of RGBA quad
+
+    @return: R, G, B, A
+    @rtype: tuple of four ints
+    """
+    return (fi.FI_RGBA_RED_MASK, fi.FI_RGBA_GREEN_MASK,
+            fi.FI_RGBA_BLUE_MASK, fi.FI_RGBA_ALPHA_MASK)
+
+def getColorShiftRGBA():
+    """Get color shift of RGBA quad
+
+    @return: R, G, B, A
+    @rtype: tuple of four ints
+    """
+    return (fi.FI_RGBA_RED_SHIFT, fi.FI_RGBA_GREEN_SHIFT,
+            fi.FI_RGBA_BLUE_SHIFT, fi.FI_RGBA_ALPHA_SHIFT)
+
+def getColorMask555():
+    """Get color mask of 16bit 555 image
+
+    @return: R, G, B
+    @rtype: tuple of three ints
+    """
+    return fi.FI16_555_RED_MASK, fi.FI16_555_GREEN_MASK, fi.FI16_555_BLUE_MASK
+
+def getColorShift555():
+    """Get color shift of 16bit 555 image
+
+    @return: R, G, B
+    @rtype: tuple of three ints
+    """
+    return fi.FI16_555_RED_SHIFT, fi.FI16_555_GREEN_SHIFT, fi.FI16_555_BLUE_SHIFT
+
+def getColorMask565():
+    """Get color mask of 16bit 565 image
+
+    @return: R, G, B
+    @rtype: tuple of three ints
+    """
+    return fi.FI16_565_RED_MASK, fi.FI16_565_GREEN_MASK, fi.FI16_565_BLUE_MASK
+
+def getColorShift565():
+    """Get color shift of 16bit 565 image
+
+    @return: R, G, B
+    @rtype: tuple of three ints
+    """
+    return fi.FI16_565_RED_SHIFT, fi.FI16_565_GREEN_SHIFT, fi.FI16_565_BLUE_SHIFT
+
 def lookupX11Color(name):
     """lookupX11Color(name) -> (r, g, b)
     """
@@ -2093,7 +2174,7 @@ def jpegTransform(src, dst, unsigned int op, unsigned int perfect=0):
     cdst = bdst
 
     with nogil:
-        result = fi.FreeImage_JPEGTransform(csrc, 
+        result = fi.FreeImage_JPEGTransform(csrc,
                                             cdst,
                                             <fi.FREE_IMAGE_JPEG_OPERATION>op,
                                             perfect)

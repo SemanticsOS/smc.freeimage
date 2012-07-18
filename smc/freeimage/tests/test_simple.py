@@ -130,6 +130,18 @@ class SimpleStuff(unittest2.TestCase):
                          (255, 250, 205))
         self.assertRaises(TypeError, freeimage.lookupSVGColor, None)
 
+    @owner("c.heimes")
+    def test_getColorOrder(self):
+        self.assertEqual(freeimage.getColorOrder(), "BGR")
+        self.assertEqual(freeimage.getColorIndexRGBA(), (2, 1, 0, 3))
+        self.assertEqual(freeimage.getColorMaskRGBA(),
+                         (0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000))
+        self.assertEqual(freeimage.getColorShiftRGBA(), (16, 8, 0, 24))
+        self.assertEqual(freeimage.getColorShift555(), (10, 5, 0))
+        self.assertEqual(freeimage.getColorShift565(), (11, 5, 0))
+        self.assertEqual(freeimage.getColorMask555(), (0x7C00, 0x03E0, 0x001F))
+        self.assertEqual(freeimage.getColorMask565(), (0xF800, 0x07E0, 0x001F))
+
 
 def test_main():
     suite = unittest2.TestSuite()

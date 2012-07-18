@@ -13,6 +13,8 @@ Testing
 Bugs
 ----
 
+ * char *_filename doesn't work well
+
 
 Features
 --------

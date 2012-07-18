@@ -23,7 +23,7 @@
 # THIS DISCLAIMER.
 #
 # testing package
-__all__ = ("IMG", "TIFF", "BITON", "ICMS", "MULTIPAGE", "owner", "unittest")
+__all__ = ("IMG", "TIFF", "BITON", "ICMS", "MULTIPAGE", "BUFFERTEST", "owner", "unittest")
 import os
 from glob import glob
 
@@ -50,6 +50,7 @@ TIFF = os.path.join(TESTDATA, "lzw_pon.tiff")
 TIFF2 = os.path.join(TESTDATA, "non_pon_large.tiff")
 BITON = os.path.join(TESTDATA, "1bpp.tiff")
 MULTIPAGE = os.path.join(TESTDATA, "multipage.tiff")
+BUFFERTEST = os.path.join(TESTDATA, "buffertest.tiff")
 ICMS = glob(os.path.join(TESTDATA, "*.icm"))
 
 try:

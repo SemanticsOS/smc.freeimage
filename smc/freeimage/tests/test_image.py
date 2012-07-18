@@ -527,6 +527,11 @@ class TestImageNewBuffer(TestImageBase):
     def test_newbuffer(self):
         img = self.buffertest
         m = memoryview(img)
+        data = m.tobytes()
+        self.assertEqual(len(data), 7 * 5 * 3)
+        #print("\n)
+        #for i in range(7):
+        #    print(" ".join("%3i" % ord(v) for v in data[i * 5 * 3:(i + 1) * 5 * 3]))
         self.assertRaises(OperationError, img.close)
         del m
         img.close()
@@ -534,13 +539,19 @@ class TestImageNewBuffer(TestImageBase):
     @owner("c.heimes")
     @unittest2.skipIf(numpy is None, "numpy not installed")
     def test_newbuffer_numpy(self):
-        dt = numpy.dtype(int)
         img = self.buffertest
         arr = numpy.asarray(img)
-        rarr = arr[::-1]
-        # XXX figure out how to compare data
-        self.assertEqual(tuple(rarr[0][0]), (0, 0, 0))
-        self.assertEqual(tuple(rarr[1][0]), (255, 255, 255))
+        #print(arr)
+
+        self.assertEqual(tuple(arr[0][0]), (0, 0, 0))
+        self.assertEqual(tuple(arr[1][0]), (255, 255, 255))
+        self.assertEqual(arr[1, 0, 0], 255)
+
+        grey = img.greyscale()
+        arr = numpy.asarray(grey)
+        self.assertEqual(arr[0, 0], 0)
+        self.assertEqual(arr[1, 0], 255)
+        self.assertEqual(list(arr[2]), [80, 112, 160, 192, 240])
 
 
 class TestMultiPage(TestImageBase):
@@ -856,7 +867,8 @@ def test_memory():
 if __name__ == "__main__": # pragma: no cover
     suite = unittest2.TestSuite()
     #suite.addTest(TestMultiPage("test_multipage"))
-    suite.addTest(unittest2.defaultTestLoader.loadTestsFromTestCase(TestImageNewBuffer))
+    suite.addTest(TestImageNewBuffer("test_newbuffer"))
+    suite.addTest(TestImageNewBuffer("test_newbuffer_numpy"))
     #suite.addTest(TestMetadata("test_icc"))
     #suite.addTest(TestImage("test_rotation"))
     #suite.addTest(TestImage("test_toBuffer_PIL"))

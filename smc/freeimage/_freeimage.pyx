@@ -757,6 +757,8 @@ cdef class Image:
 
     # buffer interface
     cdef unsigned int _buffer_count
+    cdef Py_ssize_t[3] _shape
+    cdef Py_ssize_t[3] _strides
     cdef __cythonbufferdefaults__ = {"ndim": 2, "mode": "c"}
 
     def __init__(self, filename=None, buffer=None, _DibWrapper _bitmap = None,
@@ -900,54 +902,85 @@ cdef class Image:
     # buffer interface
     def __getbuffer__(self, cpython.Py_buffer* buffer, int flags):
         cdef fi.BYTE *data
-        cdef unsigned width, height, pitch, bitspp, bytespp
+        cdef unsigned bitspp
         cdef fi.FREE_IMAGE_TYPE image_type
-        cdef Py_ssize_t *shape, *strides
+        cdef Py_ssize_t width, height, pitch
+        cdef Py_ssize_t itemsize = 0, pixelsize = 0
 
         self._check_closed()
 
         #if flags & cpython.PyBUF_WRITABLE:
         #    raise BufferError("Writable buffer not supported")
 
-        #if not flags & cpython.PyBUF_C_CONTIGUOUS and not flags & cpython.PyBUF_ANY_CONTIGUOUS:
-        #    raise BufferError("Didn't request C or ANY contiguous strided buffer")
+        #if flags & cpython.PyBUF_F_CONTIGUOUS:
+        #    raise BufferError("Request F contiguous stride buffer")
 
         if not fi.FreeImage_HasPixels(self._dib):
             raise BufferError("Image has no pixels")
 
         image_type = fi.FreeImage_GetImageType(self._dib)
+        if image_type != fi.FIT_BITMAP:
+            raise BufferError("Buffer only implemented for bitmap")
+
+        # cast width, height and pitch to signed size
+        width = <Py_ssize_t>fi.FreeImage_GetWidth(self._dib)
+        height = <Py_ssize_t>fi.FreeImage_GetHeight(self._dib)
+        pitch = <Py_ssize_t>fi.FreeImage_GetPitch(self._dib)
         bitspp = fi.FreeImage_GetBPP(self._dib)
-        if image_type != fi.FIT_BITMAP or bitspp != 24:
-            raise BufferError("Buffer only implemented for RGB bitmap")
+        # data points to first element of last line in memory
+        # the last line in memory is the top line of the image as FreeImage
+        # stores pixel data upside down
+        data = fi.FreeImage_GetScanLine(self._dib, height-1)
 
-        width = fi.FreeImage_GetWidth(self._dib)
-        height = fi.FreeImage_GetHeight(self._dib)
-        pitch = fi.FreeImage_GetPitch(self._dib)
-        data = fi.FreeImage_GetBits(self._dib)
-        bytespp = bitspp / 8 # bits to bytes
+        if width == 0 or height == 0:
+            # shouldn't be possible, paranoid
+            raise BufferError("Can't create buffer of image with zero height or width")
 
-        # malloc arrays for shape and strides
-        buffer.shape = <Py_ssize_t *>stdlib.malloc(sizeof(Py_ssize_t) * 2)
-        if buffer.shape is NULL:
-            raise MemoryError
+        # 8 bit
+        if bitspp == 24:
+            buffer.format = b"B"
+            pixelsize = 3
+            itemsize = 1
+        elif bitspp == 8:
+            buffer.format = b"B"
+            pixelsize = 1
+            itemsize = 1
+        elif bitspp == 32:
+            buffer.format = b"B"
+            pixelsize = 4
+            itemsize = 1
+        ## 16bit
+        #elif bitspp == 16:
+        #    buffer.format = b"H"
+        #    pixelsize = 2
+        #    itemsize = 2
+        #elif bitspp == 48:
+        #    buffer.format = b"H"
+        #    pixelsize = 3
+        #    itemsize = 2
+        #elif bitspp == 64:
+        #    buffer.format = b"H"
+        #    pixelsize = 4
+        #    itemsize = 2
+        else:
+            raise BufferError("BPP %i not supported yet" % bitspp)
 
-        buffer.strides = <Py_ssize_t *>stdlib.malloc(sizeof(Py_ssize_t) * 2)
-        if buffer.strides is NULL:
-            stdlib.free(buffer.shape)
-            raise MemoryError
+        self._shape[0] = height
+        self._shape[1] = width
+        self._shape[2] = pixelsize
+        self._strides[0] = -pitch # negative pitch to compensate for upside down
+        self._strides[1] = pixelsize
+        self._strides[2] = itemsize
 
         buffer.buf = data
         buffer.obj = self
-        buffer.len = <Py_ssize_t>width * <Py_ssize_t>height * <Py_ssize_t>bytespp
+        buffer.len = width * height * pixelsize * itemsize
         buffer.readonly = 0
-        buffer.format = b"BBB"
-        buffer.ndim = 2
-        buffer.shape[0] = height
-        buffer.shape[1] = width
-        buffer.strides[0] = pitch
-        buffer.strides[1] = bytespp
+        buffer.ndim = 3
+        buffer.shape = self._shape
+        buffer.strides = self._strides
+        buffer.itemsize = itemsize
         buffer.suboffsets = NULL
-        buffer.itemsize = <Py_ssize_t>bytespp
         buffer.internal = NULL
 
         self._buffer_count += 1
@@ -955,15 +988,7 @@ cdef class Image:
     def __releasebuffer__(self, cpython.Py_buffer* buffer):
         if buffer.obj is not self:
             raise BufferError("%r is not %r" % (buffer.obj, self))
-
         self._buffer_count -= 1
-
-        if buffer.shape:
-            stdlib.free(buffer.shape)
-            buffer.shape = NULL
-        if buffer.strides:
-            stdlib.free(buffer.strides)
-            buffer.strides = NULL
 
 
     # **********************************************************************

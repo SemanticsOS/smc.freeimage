@@ -476,14 +476,14 @@ cdef class _MemoryIO:
         # This avoid images from being closed while a buffer still points to
         # its data.
         self._img = img
-        self._img.buffers += 1
+        self._img._buffer_count += 1
 
 
     def __dealloc__(self):
         if self._mem != NULL:
             fi.FreeImage_CloseMemory(self._mem)
         self._mem = NULL
-        self._img.buffers -= 1
+        self._img._buffer_count -= 1
 
     def __getreadbuffer__(self, int index, void **ptr):
         cdef fi.DWORD size
@@ -1288,7 +1288,7 @@ cdef class Image:
         if dib == NULL:
             raise dispatchFIError(OperationError, "Failed to clone image")
         clone = Image(_bitmap=DibWrapper(dib, self))
-        clone._filename = self._filename
+        #clone._filename = self._filename
         return clone
 
     def crop(self, int left, int top, int right, int bottom):

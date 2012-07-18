@@ -447,8 +447,7 @@ cdef class _MemoryIO:
         cdef fi.FIMEMORY *mem = NULL
         self._mem = NULL
 
-        if img._dib == NULL:
-            raise IOError("Operation on closed image")
+        img._check_access(1)
         if format == fi.FIF_UNKNOWN:
             self._format = img._format
             # sensible default
@@ -864,10 +863,16 @@ cdef class Image:
             else:
                 with nogil:
                     fi.FreeImage_UnlockPage(self._mp._mp, self._dib, self._changed)
+                #self._mp = None
 
-    cdef _check_closed(self):
+    cdef int _check_access(self, bint pixels) except -1:
         if self._dib == NULL:
             raise IOError("Operation on closed image")
+            return -1
+        if pixels and not fi.FreeImage_HasPixels(self._dib):
+            raise IOError("Image has no pixel data loaded")
+            return -1
+        return 0
 
     def __dealloc__(self):
         self.close()
@@ -878,7 +883,7 @@ cdef class Image:
                + 3 * 8 # three points
                + len(self._filename) # filename
                )
-        if self._dib != NULL:
+        if self._dib != NULL and fi.FreeImage_HasPixels(self._dib):
             # doesn't take alignment into account, might be larger
             data = self.bpp * self.width * self.height // 8
         else:
@@ -893,7 +898,7 @@ cdef class Image:
 
     # context wrapper
     def __enter__(self):
-        self._check_closed()
+        self._check_access(0)
         return self
 
     def __exit__(self, exc, value, tb):
@@ -907,16 +912,13 @@ cdef class Image:
         cdef Py_ssize_t width, height, pitch
         cdef Py_ssize_t itemsize = 0, pixelcount = 0
 
-        self._check_closed()
+        self._check_access(1)
 
         #if flags & cpython.PyBUF_WRITABLE:
         #    raise BufferError("Writable buffer not supported")
 
         #if flags & cpython.PyBUF_F_CONTIGUOUS:
         #    raise BufferError("Request F contiguous stride buffer")
-
-        if not fi.FreeImage_HasPixels(self._dib):
-            raise BufferError("Image has no pixels")
 
         image_type = fi.FreeImage_GetImageType(self._dib)
         # cast width, height and pitch to signed size
@@ -980,10 +982,9 @@ cdef class Image:
             itemsize = 8
             pixelcount = 1
         elif image_type == fi. FIT_COMPLEX:
-            raise BufferError("Complex image not supported yet")
-            #buffer.format = b""
-            #itemsize = 16
-            #pixelcount = 1
+            buffer.format = b"d"
+            itemsize = 8
+            pixelcount = 2
         elif image_type == fi. FIT_RGB16:
             buffer.format = b"H"
             itemsize = 2
@@ -1059,7 +1060,7 @@ cdef class Image:
         Type referes to the data type of the image like fi.FIT_BITMAP or fi.FIT_RGBF.
         """
         def __get__(self):
-            self._check_closed()
+            self._check_access(0)
             return fi.FreeImage_GetImageType(self._dib)
 
     property mimetype:
@@ -1076,13 +1077,13 @@ cdef class Image:
         Dots per inch (x axis)
         """
         def __get__(self):
-            self._check_closed()
+            self._check_access(0)
             return round(fi.FreeImage_GetDotsPerMeterX(self._dib) * INCH_METER)
 
         def __set__(self, float dpi):
             if dpi < 0:
                 raise ValueError("DPI must be positive or zero.")
-            self._check_closed()
+            self._check_access(1)
             fi.FreeImage_SetDotsPerMeterX(self._dib, int(round(dpi * METER_INCH)))
 
     property dpi_y:
@@ -1091,13 +1092,13 @@ cdef class Image:
         Dots per inch (y axis)
         """
         def __get__(self):
-            self._check_closed()
+            self._check_access(0)
             return round(fi.FreeImage_GetDotsPerMeterY(self._dib) * INCH_METER)
 
         def __set__(self, float dpi):
             if dpi < 0:
                 raise ValueError("DPI must be positive or zero.")
-            self._check_closed()
+            self._check_access(1)
             fi.FreeImage_SetDotsPerMeterY(self._dib, int(round(dpi * METER_INCH)))
 
     property dpi:
@@ -1112,10 +1113,11 @@ cdef class Image:
         Dots per meter (x axis)
         """
         def __get__(self):
-            self._check_closed()
+            self._check_access(0)
             return int(fi.FreeImage_GetDotsPerMeterX(self._dib))
 
         def __set__(self, unsigned dpm):
+            self._check_access(1)
             fi.FreeImage_SetDotsPerMeterX(self._dib, dpm)
 
     property dpm_y:
@@ -1124,11 +1126,11 @@ cdef class Image:
         Dots per meter (y axis)
         """
         def __get__(self):
-            self._check_closed()
+            self._check_access(0)
             return int(fi.FreeImage_GetDotsPerMeterY(self._dib))
 
         def __set__(self, unsigned dpm):
-            self._check_closed()
+            self._check_access(1)
             fi.FreeImage_SetDotsPerMeterY(self._dib, dpm)
 
     property dpm:
@@ -1144,7 +1146,7 @@ cdef class Image:
         high color images.
         """
         def __get__(self):
-            self._check_closed()
+            self._check_access(0)
             return fi.FreeImage_GetColorsUsed(self._dib)
 
     property bpp:
@@ -1153,7 +1155,7 @@ cdef class Image:
         bits per pixel
         """
         def __get__(self):
-            self._check_closed()
+            self._check_access(0)
             return fi.FreeImage_GetBPP(self._dib)
 
     property has_icc:
@@ -1163,7 +1165,7 @@ cdef class Image:
         """
         def __get__(self):
             if self._icc == NULL:
-                self._check_closed()
+                self._check_access(0)
                 with nogil:
                     self._icc = fi.FreeImage_GetICCProfile(self._dib)
             if self._icc.data:
@@ -1188,7 +1190,7 @@ cdef class Image:
         Get color type of the image, e.g. fi.FIC_MINISBLACK, fi.FIC_RGB, fi.FIC_CMYK ...
         """
         def __get__(self):
-            self._check_closed()
+            self._check_access(0)
             return fi.FreeImage_GetColorType(self._dib)
 
     property color_type_name:
@@ -1196,7 +1198,7 @@ cdef class Image:
         """
         def __get__(self):
             cdef fi.FREE_IMAGE_COLOR_TYPE ct
-            self._check_closed()
+            self._check_access(0)
             ct = fi.FreeImage_GetColorType(self._dib)
             return _COLOR_TYPE_NAMES.get(ct, "UNKNOWN")
 
@@ -1204,21 +1206,21 @@ cdef class Image:
         """is_transparent -> bool
         """
         def __get__(self):
-            self._check_closed()
+            self._check_access(0)
             return fi.FreeImage_IsTransparent(self._dib)
 
     property has_bg_color:
         """has_bg_color -> bool
         """
         def __get__(self):
-            self._check_closed()
+            self._check_access(0)
             return fi.FreeImage_HasBackgroundColor(self._dib)
 
     property rgb_mask:
         """Get bitmask for red, green and blue channel
         """
         def __get__(self):
-            self._check_closed()
+            self._check_access(0)
             if fi.FreeImage_GetColorType(self._dib) != fi.FIC_RGB:
                 return None
             return (fi.FreeImage_GetRedMask(self._dib),
@@ -1242,7 +1244,7 @@ cdef class Image:
         @return: True if image has pixel and isn't loaded with fi.FIF_LOAD_NOPIXELS
         """
         def __get__(self):
-            self._check_closed()
+            self._check_access(0)
             return bool(fi.FreeImage_HasPixels(self._dib))
 
     property closed:
@@ -1258,7 +1260,7 @@ cdef class Image:
 
         Fill the entire image
         """
-        self._check_closed()
+        self._check_access(1)
         result = floodfill(self._dib, red, green, blue, 0)
         if result == ERR_ARG:
             raise ValueError("Wrong arguments, colors must be between 0% and 100%")
@@ -1276,7 +1278,7 @@ cdef class Image:
         """
         cdef fi.BOOL result
         cdef char* cfilename
-        self._check_closed()
+        self._check_access(1)
 
         filename = _decodeFilename(filename)
         cfilename = <char*>filename
@@ -1297,6 +1299,7 @@ cdef class Image:
         """
         if smc_fi.IS_PYTHON3:
             raise NotImplementedError("tuBuffer() not implemented for 3.x yet")
+        self._check_access(1)
         return _MemoryIO(self, format, flags)
 
     def toPIL(self, int format=-1, int flags=0):
@@ -1314,7 +1317,7 @@ cdef class Image:
         cdef fi.FIBITMAP* dib
         cdef Image new
 
-        self._check_closed()
+        self._check_access(1)
         with nogil:
             dib = fi.FreeImage_Rescale(self._dib, width, height, <fi.FREE_IMAGE_FILTER>filter)
         if dib == NULL:
@@ -1333,7 +1336,7 @@ cdef class Image:
         alpha: 0 to 255 for alpha blending or 256 for combination.
         """
         cdef int result
-        self._check_closed()
+        self._check_access(1)
         if src._dib == NULL:
             raise IOError("Operation on closed source image")
         with nogil:
@@ -1348,7 +1351,8 @@ cdef class Image:
         """
         cdef fi.FIBITMAP* dib
         cdef Image clone
-        self._check_closed()
+
+        self._check_access(1)
         with nogil:
             dib = fi.FreeImage_Clone(self._dib)
         if dib == NULL:
@@ -1363,7 +1367,7 @@ cdef class Image:
         cdef fi.FIBITMAP* dib
         cdef Image new
 
-        self._check_closed()
+        self._check_access(1)
         if right == -1 and bottom == -1:
             right = self.width
             bottom = self.height
@@ -1385,7 +1389,7 @@ cdef class Image:
         cdef fi.FIBITMAP* dib
         cdef Image new
 
-        self._check_closed()
+        self._check_access(1)
         with nogil:
             dib = conv(self._dib)
         if dib == NULL:
@@ -1438,7 +1442,7 @@ cdef class Image:
         cdef fi.FIBITMAP* dib
         cdef Image new
 
-        self._check_closed()
+        self._check_access(1)
         with nogil:
             dib = fi.FreeImage_ConvertToStandardType(self._dib, scale_linear)
         if dib == NULL:
@@ -1451,7 +1455,7 @@ cdef class Image:
         cdef fi.FIBITMAP* dib
         cdef Image new
 
-        self._check_closed()
+        self._check_access(1)
         with nogil:
             dib = fi.FreeImage_ConvertToType(self._dib, <fi.FREE_IMAGE_TYPE>dst_type, scale_linear)
         if dib == NULL:
@@ -1466,7 +1470,7 @@ cdef class Image:
         cdef fi.FIBITMAP* dib
         cdef Image new
 
-        self._check_closed()
+        self._check_access(1)
         with nogil:
             dib = fi.FreeImage_Dither(self._dib, <fi.FREE_IMAGE_DITHER>dither_alg)
         if dib == NULL:
@@ -1483,7 +1487,7 @@ cdef class Image:
         cdef fi.FIBITMAP* dib
         cdef Image new
 
-        self._check_closed()
+        self._check_access(1)
         if threshold > 255:
             raise ValueError("Threshold must be between 0 and 255")
         with nogil:
@@ -1524,7 +1528,7 @@ cdef class Image:
         """
         cdef fi.FIBITMAP* dib
 
-        self._check_closed()
+        self._check_access(1)
         if angle == -90:
             angle = 270
         if angle not in (90, 180, 270):
@@ -1553,7 +1557,7 @@ cdef class Image:
         """
         cdef fi.FIBITMAP* dib
 
-        self._check_closed()
+        self._check_access(1)
 
         with nogil:
             dib = fi.FreeImage_RotateEx(self._dib, angle, x_shift, y_shift,
@@ -1584,14 +1588,14 @@ cdef class Image:
     #    Set ICC profile as byte string
     #    """
     #    cdef char *cp = cpython.PyBytes_AsString(profile)
-    #    self._check_closed()
+    #    self._check_access(0)
     #    self._icc = fi.FreeImage_CreateICCProfile(self._dib, <char*>cp, len(profile))
 
 
     def removeICC(self):
         """Remove ICC profile
         """
-        self._check_closed()
+        self._check_access(0)
         self._icc = NULL
         fi.FreeImage_DestroyICCProfile(self._dib)
 
@@ -1599,7 +1603,7 @@ cdef class Image:
     def iccTransform(self, LCMSTransformation trafo=None):
         """Apply an LCMS transformation
         """
-        self._check_closed()
+        self._check_access(1)
         if trafo is None:
             trafo = LCMSTransformation(self.getICC(), b"sRGB")
         lcmsFI(self, trafo)
@@ -1613,7 +1617,7 @@ cdef class Image:
         Count number of metadata for each model
         """
         counts = {}
-        self._check_closed()
+        self._check_access(0)
         for name, model in _META_MODELS.items():
             counts[name] = int(fi.FreeImage_GetMetadataCount(model, self._dib))
         return counts
@@ -1629,7 +1633,7 @@ cdef class Image:
         cdef char *key, *string, *descr
         metas = {}
 
-        self._check_closed()
+        self._check_access(0)
         for name, model in _META_MODELS.items():
             handle = fi.FreeImage_FindFirstMetadata(model, self._dib, &tag)
             if handle == NULL:
@@ -1654,14 +1658,14 @@ cdef class Image:
         return metas
 
     def copyMetadataFrom(self, Image src not None):
-        self._check_closed()
+        self._check_access(0)
         if src._dib == NULL:
             raise IOError("Operation on closed source image")
         if not fi.FreeImage_CloneMetadata(self._dib, src._dib):
             raise dispatchFIError(OperationError, "Failed to copy metadata")
 
     def clearMetadata(self):
-        self._check_closed()
+        self._check_access(0)
         for name, model in _META_MODELS.items():
             if not fi.FreeImage_SetMetadata(model, self._dib, NULL, NULL):
                 raise dispatchFIError(OperationError, "Failed to delete metadata model %s" % name)
@@ -1670,7 +1674,7 @@ cdef class Image:
         """getInfoHeader() -> BitmapInfo instance
         """
         cdef fi.BITMAPINFOHEADER *header
-        self._check_closed()
+        self._check_access(0)
         header = fi.FreeImage_GetInfoHeader(self._dib)
         return BitmapInfo(header)
 
@@ -1684,7 +1688,7 @@ cdef class Image:
         """
         cdef int _invert
 
-        self._check_closed()
+        self._check_access(1)
 
         _invert = cpython.PyObject_IsTrue(invert)
         if brightness < -100.0 or brightness > +100.0:
@@ -1726,7 +1730,7 @@ cdef class Image:
         cdef int bpp, i
         cdef fi.DWORD hist[256]
 
-        self._check_closed()
+        self._check_access(1)
         bpp = fi.FreeImage_GetBPP(self._dib)
 
         if bpp == 24 or bpp == 32:
@@ -1762,7 +1766,7 @@ cdef class Image:
         cdef fi.RGBQUAD color
         cdef int ys
 
-        self._check_closed()
+        self._check_access(1)
         image_type = fi.FreeImage_GetImageType(self._dib)
         width = fi.FreeImage_GetWidth(self._dib)
         height = fi.FreeImage_GetHeight(self._dib)
@@ -1812,7 +1816,7 @@ cdef class Image:
         cdef unsigned x, y
         cdef fi.FIBITMAP* dib
 
-        self._check_closed()
+        self._check_access(1)
         dib = self._dib
 
         with nogil:
@@ -1835,7 +1839,7 @@ cdef class Image:
         cdef unsigned x, y
         cdef fi.FIBITMAP* dib
 
-        self._check_closed()
+        self._check_access(1)
         dib = self._dib
 
         with nogil:
@@ -1856,7 +1860,7 @@ cdef class Image:
 #        cdef unsigned x, y
 #        cdef fi.FIBITMAP* dib
 #
-#        self._check_closed()
+#        self._check_access(1)
 #        dib = self._dib
 #
 #        # not yet implemented
@@ -1878,7 +1882,7 @@ cdef class Image:
         cdef fi.RGBQUAD color
         cdef int xs
 
-        self._check_closed()
+        self._check_access(1)
         image_type = fi.FreeImage_GetImageType(self._dib)
         width = fi.FreeImage_GetWidth(self._dib)
         height = fi.FreeImage_GetHeight(self._dib)
@@ -1934,7 +1938,7 @@ cdef class Image:
         cdef unsigned x, y
         cdef fi.FIBITMAP* dib
 
-        self._check_closed()
+        self._check_access(1)
         dib = self._dib
 
         with nogil:
@@ -1958,7 +1962,7 @@ cdef class Image:
         cdef unsigned x, y
         cdef fi.FIBITMAP* dib
 
-        self._check_closed()
+        self._check_access(1)
         dib = self._dib
 
         with nogil:
@@ -1980,7 +1984,7 @@ cdef class Image:
 #        cdef unsigned x, y
 #        cdef fi.FIBITMAP* dib
 #
-#        self._check_closed()
+#        self._check_access(1)
 #        dib = self._dib
 #
 #        # not yet implemented

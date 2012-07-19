@@ -2153,8 +2153,10 @@ def getColorMaskRGBA():
     @return: R, G, B, A
     @rtype: tuple of four ints
     """
-    return (fi.FI_RGBA_RED_MASK, fi.FI_RGBA_GREEN_MASK,
-            fi.FI_RGBA_BLUE_MASK, fi.FI_RGBA_ALPHA_MASK)
+    return (<unsigned long>fi.FI_RGBA_RED_MASK,
+            <unsigned long>fi.FI_RGBA_GREEN_MASK,
+            <unsigned long>fi.FI_RGBA_BLUE_MASK,
+            <unsigned long>fi.FI_RGBA_ALPHA_MASK)
 
 def getColorShiftRGBA():
     """Get color shift of RGBA quad
@@ -2162,8 +2164,10 @@ def getColorShiftRGBA():
     @return: R, G, B, A
     @rtype: tuple of four ints
     """
-    return (fi.FI_RGBA_RED_SHIFT, fi.FI_RGBA_GREEN_SHIFT,
-            fi.FI_RGBA_BLUE_SHIFT, fi.FI_RGBA_ALPHA_SHIFT)
+    return (fi.FI_RGBA_RED_SHIFT,
+            fi.FI_RGBA_GREEN_SHIFT,
+            fi.FI_RGBA_BLUE_SHIFT,
+            fi.FI_RGBA_ALPHA_SHIFT)
 
 def getColorMask555():
     """Get color mask of 16bit 555 image

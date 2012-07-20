@@ -27,6 +27,7 @@ from libc cimport stddef
 
 cdef extern from "smc_fi.h" nogil:
     cdef bint IS_PYTHON3
+    cdef bint SMC_FI_BIG_ENDIAN
 
 cdef extern from "wchar.h" nogil:
     cdef size_t wcslen(stddef.wchar_t * s)

@@ -44,6 +44,16 @@
 
 typedef FIBITMAP* (DLL_CALLCONV *FI_ConvertFunction)(FIBITMAP *dib);
 
+#if (CMS_USE_BIG_ENDIAN == 1) && !defined(FREEIMAGE_BIGENDIAN)
+    #error "CMS_USE_BIG_ENDIAN / FREEIMAGE_BIGENDIAN mismatch"
+#endif
+
+#if (CMS_USE_BIG_ENDIAN == 1)
+    #define SMC_FI_BIG_ENDIAN 1
+#else
+    #define SMC_FI_BIG_ENDIAN 0
+#endif
+
 // LCMS2 definitions
 #ifndef _MSC_VER
 

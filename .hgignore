@@ -1,6 +1,7 @@
 build
 dist
 smc.freeimage.egg-info
+cython_debug
 
 .settings
 
@@ -29,4 +30,5 @@ smc/freeimage/lcmsconstants*.dylib
 *.o
 *.pyc
 *.pyo
+core*
 

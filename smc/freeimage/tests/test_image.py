@@ -46,6 +46,11 @@ try:
 except ImportError:
     numpy = None
 
+try:
+    from PIL import Image as PilImage
+except ImportError:
+    PilImage = None
+
 
 class TestImageBase(unittest2.TestCase):
     image_names = ("img", "tiff") # "biton",
@@ -529,7 +534,7 @@ class TestImageNewBuffer(TestImageBase):
         m = memoryview(img)
         data = m.tobytes()
         self.assertEqual(len(data), 7 * 5 * 3)
-        #print("\n)
+        #print("\n")
         #for i in range(7):
         #    print(" ".join("%3i" % ord(v) for v in data[i * 5 * 3:(i + 1) * 5 * 3]))
         self.assertRaises(OperationError, img.close)
@@ -552,6 +557,17 @@ class TestImageNewBuffer(TestImageBase):
         self.assertEqual(arr[0, 0], 0)
         self.assertEqual(arr[1, 0], 255)
         self.assertEqual(list(arr[2]), [80, 112, 160, 192, 240])
+
+    def test_rawbytes(self):
+        img = self.buffertest
+        self.assertEqual(len(img.getRaw()), 7 * ((5 * 3) + 1))
+
+        img = img.resize(width=img.width * 99, height=img.height * 99)
+        #print img.stride_padding, img.width * 3, img.pitch
+        data = img.getRaw()
+        pimg = PilImage.fromstring("RGB", img.size, data,
+                                   "raw", getColorOrder(), img.pitch, -1)
+        #pimg.show()
 
 
 class TestMultiPage(TestImageBase):
@@ -867,8 +883,9 @@ def test_memory():
 if __name__ == "__main__": # pragma: no cover
     suite = unittest2.TestSuite()
     #suite.addTest(TestMultiPage("test_multipage"))
-    suite.addTest(TestImageNewBuffer("test_newbuffer"))
-    suite.addTest(TestImageNewBuffer("test_newbuffer_numpy"))
+    #suite.addTest(TestImageNewBuffer("test_newbuffer"))
+    #suite.addTest(TestImageNewBuffer("test_newbuffer_numpy"))
+    suite.addTest(TestImageNewBuffer("test_rawbytes"))
     #suite.addTest(TestMetadata("test_icc"))
     #suite.addTest(TestImage("test_rotation"))
     #suite.addTest(TestImage("test_toBuffer_PIL"))

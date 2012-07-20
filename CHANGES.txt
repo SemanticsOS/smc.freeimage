@@ -14,6 +14,10 @@ smc.freeimage 0.2
 - added getColor* functions to get shift, mask and order of RGBA
   and 16bit image pixel data.
 
+- implemented getRaw() to get a copy of the raw pixel data.
+
+- support building smc.freeimage without Cython and just from _freeimage.c
+
 
 smc.freeimage 0.1
 =================

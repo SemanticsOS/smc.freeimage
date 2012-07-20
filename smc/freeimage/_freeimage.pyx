@@ -1032,6 +1032,36 @@ cdef class Image:
             raise BufferError("%r is not %r" % (buffer.obj, self))
         self._buffer_count -= 1
 
+    ## old buffer API for PIL
+    #def __getreadbuffer__(self, int segment, void **ptr):
+    #    cdef fi.BYTE *bits
+    #
+    #    if segment != 0:
+    #        raise SystemError("accessing non-existent string segment")
+    #
+    #    self._check_access(1)
+    #    bits = fi.FreeImage_GetBits(self._dib)
+    #    ptr = <void**>&bits
+    #
+    #    return self.bitsize
+    #
+    #def __getwritebuffer__(self, int segment, void **ptr):
+    #    cdef fi.BYTE *bits
+    #
+    #    if segment != 0:
+    #        raise SystemError("accessing non-existent string segment")
+    #
+    #    self._check_access(1)
+    #    bits = fi.FreeImage_GetBits(self._dib)
+    #    ptr = <void**>&bits
+    #
+    #    return self.bitsize
+    #s
+    #def __getsegcount__(self, Py_ssize_t *lenp):
+    #    if lenp:
+    #        lenp = &self.bitsize
+    #    return 1
+
 
     # **********************************************************************
     # Info

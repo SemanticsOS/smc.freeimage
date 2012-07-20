@@ -674,7 +674,7 @@ cdef class Multipage:
             return funicode(self._filename)
 
     property size:
-        """size -> (widht: int, height: int)
+        """size -> (width: int, height: int)
         """
         def __get__(self):
             return self.width, self.height
@@ -747,6 +747,7 @@ cdef class Image:
     """
     cdef readonly unsigned int width
     cdef readonly unsigned int height
+    #cdef readonly Py_ssize_t bitsize
     cdef fi.FREE_IMAGE_FORMAT _format
     cdef char* _filename
     cdef fi.FIBITMAP* _dib
@@ -840,6 +841,7 @@ cdef class Image:
     cdef _init_infos(self):
         self.width = fi.FreeImage_GetWidth(self._dib)
         self.height = fi.FreeImage_GetHeight(self._dib)
+        #self.bitsize = self.height * fi.FreeImage_GetPitch(self._dib)
         self._icc = NULL
         self._mp = None
         self._changed = False
@@ -1041,10 +1043,19 @@ cdef class Image:
             return funicode(self._filename)
 
     property size:
-        """size -> (widht: int, height: int)
+        """size -> (width: int, height: int)
         """
         def __get__(self):
             return self.width, self.height
+
+    property pitch:
+        """pitch -> int
+
+        Get pitch of scan lines (width + padding)
+        """
+        def __get__(self):
+            self._check_access(1)
+            return fi.FreeImage_GetPitch(self._dib)
 
     property format:
         """format -> int (fi.FIF_*)
@@ -1308,6 +1319,27 @@ cdef class Image:
         from PIL.Image import open as pil_open
         buffer = self.toBuffer(format, flags)
         return pil_open(buffer)
+
+    def getRaw(self):
+        """Get raw data
+
+        Returns raw image data as bytes. It's up to you to interpret the raw
+        bytes according to image type, bpp, color order and stride padding.
+
+        @note: FreeImage stores the lines upside down
+        @return: copy of raw image data
+        @rtype: bytes
+        """
+        cdef fi.BYTE *bits
+        cdef unsigned height, pitch
+
+        self._check_access(1)
+
+        bits = fi.FreeImage_GetBits(self._dib)
+        height = fi.FreeImage_GetHeight(self._dib)
+        pitch = fi.FreeImage_GetPitch(self._dib)
+        barray = cpython.PyBytes_FromStringAndSize(<char*>bits, height*pitch)
+        return barray
 
     # **********************************************************************
     # scale

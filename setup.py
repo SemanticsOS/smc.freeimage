@@ -39,11 +39,17 @@ if "--static" in sys.argv:
 else:
     STATIC = False
 
-import Cython.Distutils
-from Cython.Distutils import build_ext
-# aliases for setuptools
-sys.modules["Pyrex"] = Cython
-sys.modules["Pyrex.Distutils"] = Cython.Distutils
+try:
+    import Cython.Distutils
+except ImportError:
+    from distutils.command.build_ext import build_ext
+    HAS_CYTHON = False
+else:
+    HAS_CYTHON = True
+    from Cython.Distutils import build_ext
+    # aliases for setuptools
+    sys.modules["Pyrex"] = Cython
+    sys.modules["Pyrex.Distutils"] = Cython.Distutils
 
 
 try:
@@ -148,18 +154,24 @@ else:
     addshared()
 
 # Cython and distutils sometimes don't pick up that _freeimage.c is outdated
-if os.path.isfile("smc/freeimage/_freeimage.c"):
-    files = glob("smc/freeimage/*.pyx") + glob("smc/freeimage/*.px?")
-    if newer_group(files, "smc/freeimage/_freeimage.c"):
-        print("unlink smc/freeimage/_freeimage.c")
-        os.unlink("smc/freeimage/_freeimage.c")
+if HAS_CYTHON:
+    if os.path.isfile("smc/freeimage/_freeimage.c"):
+        files = glob("smc/freeimage/*.pyx") + glob("smc/freeimage/*.px?")
+        if newer_group(files, "smc/freeimage/_freeimage.c"):
+            print("unlink smc/freeimage/_freeimage.c")
+            os.unlink("smc/freeimage/_freeimage.c")
+
+if HAS_CYTHON:
+    freeimage_files = ["smc/freeimage/_freeimage.pyx"]
+else:
+    freeimage_files = ["smc/freeimage/_freeimage.c"]
 
 
 setup_info = dict(
     name="smc.freeimage",
     version="0.1.20120714",
     ext_modules=[
-        Extension("smc.freeimage._freeimage", ["smc/freeimage/_freeimage.pyx"],
+        Extension("smc.freeimage._freeimage", freeimage_files,
                   extra_objects=fi_ext_extra_objects, **fi_ext_extras),
         Extension("smc.freeimage.ficonstants", ["smc/freeimage/ficonstants.c"],
                   **fi_ext_extras),

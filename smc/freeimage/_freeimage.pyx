@@ -759,6 +759,7 @@ cdef class Image:
     cdef unsigned int _buffer_count
     cdef Py_ssize_t[3] _shape
     cdef Py_ssize_t[3] _strides
+    cdef Py_ssize_t[3] _suboffsets
     cdef __cythonbufferdefaults__ = {"ndim": 2, "mode": "c"}
 
     def __init__(self, filename=None, buffer=None, _DibWrapper _bitmap = None,
@@ -916,11 +917,8 @@ cdef class Image:
 
         self._check_access(1)
 
-        #if flags & cpython.PyBUF_WRITABLE:
-        #    raise BufferError("Writable buffer not supported")
-
-        #if flags & cpython.PyBUF_F_CONTIGUOUS:
-        #    raise BufferError("Request F contiguous stride buffer")
+        if not flags & cpython.PyBUF_RECORDS_RO:
+            raise BufferError("Only strided and shaped buffers with format are supported")
 
         image_type = fi.FreeImage_GetImageType(self._dib)
         # cast width, height and pitch to signed size
@@ -1007,23 +1005,30 @@ cdef class Image:
         if itemsize == 0 or pixelcount == 0:
             raise BufferError("Unknown or unsupported image type %i" % image_type)
 
-        self._shape[0] = height
-        self._shape[1] = width
-        self._shape[2] = pixelcount
-        self._strides[0] = -pitch # negative pitch to compensate for upside down
-        self._strides[1] = pixelcount
-        self._strides[2] = itemsize
-
         buffer.buf = data
         buffer.obj = self
         buffer.len = width * height * pixelcount * itemsize
         buffer.readonly = 0
-        buffer.ndim = 3
         buffer.shape = self._shape
         buffer.strides = self._strides
         buffer.itemsize = itemsize
         buffer.suboffsets = NULL
         buffer.internal = NULL
+
+        if pixelcount == 1:
+            buffer.ndim = 2
+            self._shape[0] = height
+            self._shape[1] = width
+            self._strides[0] = -pitch # negative pitch to compensate for upside down
+            self._strides[1] = 1
+        else:
+            buffer.ndim = 3
+            self._shape[0] = height
+            self._shape[1] = width
+            self._shape[2] = pixelcount
+            self._strides[0] = -pitch # negative pitch to compensate for upside down
+            self._strides[1] = pixelcount
+            self._strides[2] = itemsize
 
         self._buffer_count += 1
 
@@ -1380,6 +1385,10 @@ cdef class Image:
         cdef Image new
 
         self._check_access(1)
+
+        if width <= 0 or height <= 0:
+            raise ValueError("negative sizes are not supported")
+
         with nogil:
             dib = fi.FreeImage_Rescale(self._dib, width, height, <fi.FREE_IMAGE_FILTER>filter)
         if dib == NULL:

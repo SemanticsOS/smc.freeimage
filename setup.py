@@ -105,6 +105,7 @@ def addshared():
               define_macros=[("FREEIMAGE_TURBO", 0)])
     merge(libraries=["lcms2"],
           define_macros=[("CMS_DLL", "1")])
+    return bool(turbo)
 
 
 def addstatic():
@@ -115,13 +116,16 @@ def addstatic():
     if os.path.isfile("static/libfreeimageturbo.a"):
         fi_ext_extra_objects.append("static/libfreeimageturbo.a")
         merge(define_macros=[("FREEIMAGE_TURBO", 1)])
+        turbo = True
     else:
         fi_ext_extra_objects.append("static/libfreeimage.a")
         merge(define_macros=[("FREEIMAGE_TURBO", 0)])
+        turbo = False
     fi_ext_extra_objects.append("static/liblcms2.a")
     # FreeImage needs C++ standard library
     merge(libraries=["stdc++"],
           include_dirs=["static"])
+    return turbo
 
 
 def merge(**kwargs):
@@ -149,9 +153,9 @@ if VLS_ENV is not None:
 
 # build static or shared extension?
 if STATIC:
-    addstatic()
+    HAS_TURBO = addstatic()
 else:
-    addshared()
+    HAS_TURBO = addshared()
 
 # Cython and distutils sometimes don't pick up that _freeimage.c is outdated
 if HAS_CYTHON:
@@ -215,20 +219,21 @@ setup_info = dict(
 )
 
 if IS_WINDOWS:
+    fidll = "FreeImageTurbo.dll" if HAS_TURBO else "FreeImage.dll"
     if IS_64:
-        shutil.copy("windows/x86_64/FreeImage.dll", "smc/freeimage/")
+        shutil.copy("windows/x86_64/%s" % fidll, "smc/freeimage/")
         shutil.copy("windows/x86_64/lcms2.dll", "smc/freeimage/")
     else:
-        shutil.copy("windows/x86/FreeImage.dll", "smc/freeimage/")
+        shutil.copy("windows/x86/%s" % fidll, "smc/freeimage/")
         shutil.copy("windows/x86/lcms2.dll", "smc/freeimage/")
     pd = setup_info.setdefault("package_data", {})
     pd_sf = pd.setdefault("smc.freeimage", [])
-    pd_sf.append("FreeImage.dll")
+    pd_sf.append(fidll)
     pd_sf.append("lcms2.dll")
 
 setup(**setup_info)
 
 #if IS_WINDOWS:
-#    os.unlink("smc/freeimage/FreeImage.dll")
+#    os.unlink("smc/freeimage/%s" % fidll)
 #    os.unlink("smc/freeimage/lcms2.dll")
 

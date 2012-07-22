@@ -66,6 +66,36 @@ framework.
  * Wraps a large subset of FreeImage features
 
 
+Performance
+===========
+
+smc.freeimage with libjpeg-turbo read JPEGs about three times faster than
+PIL and writes JPEGs more than five times faster.
+
+Python 2.7.3
+read / write cycles: 300
+test image: 1210x1778 24bpp JPEG (pon.jpg)
+platform: Ubuntu 12.04 X86_64
+hardware: Intel Xeon hexacore W3680@3.33GHz with 24 GB RAM
+
+smc.freeimage, FreeImage 3.15.3 with jpeg turbo
+ - read 9.315 sec
+ - write 5.873 sec
+smc.freeimage, FreeImage 3.15.3 standard
+ - read 12.763 sec
+ - write 21.780 sec
+PIL 1.1.7
+ - read 30.736 sec
+ - write 34.528 sec
+
+
+FreeImage + libjpeg-turbo
+=========================
+
+An experimental fork of FreeImage with libjpeg-turbo is available at
+https://bitbucket.org/tiran/freeimageturbo
+
+
 Authors
 =======
 

@@ -23,6 +23,14 @@ for i in xrange(COUNT):
 end = time() - start
 print " - read %0.3f sec" % end
 
+# http://www.libjpeg-turbo.org/About/Performance Restart Markers
+Image(IMG).save("pon_rewrite_fi.jpg")
+start = time()
+for i in xrange(COUNT):
+    Image("pon_rewrite_fi.jpg")
+end = time() - start
+print " - read %0.3f sec (w/o restart markers)" % end
+
 img = Image(IMG)
 start = time()
 for i in xrange(COUNT):
@@ -37,6 +45,13 @@ for i in xrange(COUNT):
 end = time() - start
 print " - read %0.3f sec" % end
 
+pil_open(IMG).save("pon_rewrite_pil.jpg")
+start = time()
+for i in xrange(COUNT):
+    pil_open("pon_rewrite_pil.jpg").load()
+end = time() - start
+print " - read %0.3f sec (resaved)" % end
+
 img = pil_open(IMG)
 img.load()
 start = time()
@@ -44,4 +59,5 @@ for i in xrange(COUNT):
     img.save("testpil.jpg")
 end = time() - start
 print " - write %0.3f sec" % end
+
 

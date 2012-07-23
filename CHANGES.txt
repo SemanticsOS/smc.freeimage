@@ -22,6 +22,8 @@ smc.freeimage 0.2
 
 - added experimental FreeImageTurbo.dll for 32bit Windows
 
+- added --without-turbo
+
 
 smc.freeimage 0.1
 =================

@@ -33,11 +33,19 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 IS_WINDOWS = (sys.platform == "win32")
 IS_64 = (struct.calcsize("P") * 8 == 64)
 VLS_ENV = os.environ.get("VLS_ENV")
+
 if "--static" in sys.argv:
     sys.argv.remove("--static")
     STATIC = True
 else:
     STATIC = False
+
+if "--without-turbo" in sys.argv:
+    sys.argv.remove("--without-turbo")
+    WITHOUT_TURBO = True
+else:
+    WITHOUT_TURBO = False
+
 
 try:
     import Cython.Distutils
@@ -94,7 +102,10 @@ def addshared():
     """Link against shared libfreeimage(turbo) and LCMS2 libs
     """
     # try to find freeimage with libjpeg-turbo
-    turbo = findlib("freeimageturbo", fi_ext_extras.get("library_dirs"))
+    if WITHOUT_TURBO:
+        turbo = False
+    else:
+        turbo = findlib("freeimageturbo", fi_ext_extras.get("library_dirs"))
     if turbo:
         print("*** FreeImage with libjpeg-turbo found at %s, using turbo" % turbo)
         merge(libraries=["freeimageturbo"],
@@ -113,7 +124,7 @@ def addstatic():
 
     binaries must be compiled with -fPIC
     """
-    if os.path.isfile("static/libfreeimageturbo.a"):
+    if not WITHOUT_TURBO and os.path.isfile("static/libfreeimageturbo.a"):
         fi_ext_extra_objects.append("static/libfreeimageturbo.a")
         merge(define_macros=[("FREEIMAGE_TURBO", 1)])
         turbo = True

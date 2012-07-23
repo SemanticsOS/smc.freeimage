@@ -69,8 +69,13 @@ framework.
 Performance
 ===========
 
-smc.freeimage with libjpeg-turbo read JPEGs about three times faster than
-PIL and writes JPEGs more than five times faster.
+smc.freeimage with libjpeg-turbo read JPEGs about three to six times faster
+than PIL and writes JPEGs more than five times faster.
+
+JPEG's restart markers are not compatible with libjpeg-turbo's Huffman
+decoder optimization and reduce performance a lot. Please read the section
+"Restart Makers" on the page http://www.libjpeg-turbo.org/About/Performance
+for more information.
 
 Python 2.7.3
 read / write cycles: 300
@@ -79,14 +84,17 @@ platform: Ubuntu 12.04 X86_64
 hardware: Intel Xeon hexacore W3680@3.33GHz with 24 GB RAM
 
 smc.freeimage, FreeImage 3.15.3 with jpeg turbo
- - read 9.315 sec
- - write 5.873 sec
+ - read 9.237 sec
+ - read 3.858 sec (w/o restart markers)
+ - write 5.870 sec
 smc.freeimage, FreeImage 3.15.3 standard
- - read 12.763 sec
- - write 21.780 sec
+ - read 12.857 sec
+ - read 6.629 sec (resaved)
+ - write 21.817 sec
 PIL 1.1.7
- - read 30.736 sec
- - write 34.528 sec
+ - read 30.505 sec
+ - read 22.998 sec (resaved)
+ - write 34.439 sec
 
 
 FreeImage + libjpeg-turbo

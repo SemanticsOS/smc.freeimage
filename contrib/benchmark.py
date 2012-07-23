@@ -29,14 +29,14 @@ start = time()
 for i in xrange(COUNT):
     Image("pon_rewrite_fi.jpg")
 end = time() - start
-print " - read %0.3f sec (w/o restart markers)" % end
+print " - read %0.3f sec (resaved)" % end
 
 img = Image(IMG)
 start = time()
 for i in xrange(COUNT):
     img.save("testfi.jpg")
 end = time() - start
-print " - write %0.3f sec" %  end
+print " - write %0.3f sec" % end
 
 print "PIL %s" % PIL_VERSION
 start = time()
@@ -55,7 +55,7 @@ print " - read %0.3f sec (resaved)" % end
 img = pil_open(IMG)
 img.load()
 start = time()
-for i in xrange(COUNT): 
+for i in xrange(COUNT):
     img.save("testpil.jpg")
 end = time() - start
 print " - write %0.3f sec" % end

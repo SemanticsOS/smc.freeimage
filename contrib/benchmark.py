@@ -87,6 +87,8 @@ tiff = Image(TIFF)
 start = time()
 for i in xrange(RW_COUNT):
     arr = asarray(tiff)
+    # change last BGR -> RGB
+    arr = arr[..., ::-1]
     bytescale(arr, 64, 192)
 end = time() - start
 print " - tiff numpy.asarray() with bytescale() %0.3f sec" % end
@@ -95,6 +97,7 @@ start = time()
 for i in xrange(RW_COUNT):
     tiff = Image(TIFF)
     arr = asarray(tiff)
+    arr = arr[..., ::-1]
     bytescale(arr, 64, 192)
 end = time() - start
 print " - tiff load + numpy.asarray() with bytescale() %0.3f sec" % end
@@ -149,10 +152,10 @@ tiff = pil_open(TIFF)
 tiff.load()
 start = time()
 for i in xrange(RW_COUNT):
-    arr = fromimage(tiff)
+    arr = asarray(tiff)
     bytescale(arr, 64, 192)
 end = time() - start
-print " - tiff scipy fromimage() with bytescale() %0.3f sec" % end
+print " - tiff numpy.asarray() with bytescale() %0.3f sec" % end
 
 start = time()
 for i in xrange(RW_COUNT):

@@ -45,6 +45,14 @@ for i in xrange(RW_COUNT):
 end = time() - start
 print " - read JPEG %0.3f sec (resaved)" % end
 
+# save
+img = Image(IMG)
+start = time()
+for i in xrange(RW_COUNT):
+    img.save("testfi.jpg")
+end = time() - start
+print " - write JPEG %0.3f sec" % end
+
 # TIFF read
 start = time()
 for i in xrange(RW_COUNT):
@@ -57,14 +65,6 @@ for i in xrange(RW_COUNT):
     Image(BITON)
 end = time() - start
 print " - read biton G4 TIFF %0.3f sec" % end
-
-# save
-img = Image(IMG)
-start = time()
-for i in xrange(RW_COUNT):
-    img.save("testfi.jpg")
-end = time() - start
-print " - write JPEG %0.3f sec" % end
 
 # resize
 width = img.width // 2
@@ -119,15 +119,6 @@ for i in xrange(RW_COUNT):
 end = time() - start
 print " - read JPEG %0.3f sec (resaved)" % end
 
-# TIFF read
-start = time()
-for i in xrange(RW_COUNT):
-    pil_open(TIFF).load()
-end = time() - start
-print " - read LZW TIFF %0.3f sec" % end
-
-print " - read biton G4 TIFF: decoder group4 not available"
-
 # write
 img = pil_open(IMG)
 img.load()
@@ -136,6 +127,15 @@ for i in xrange(RW_COUNT):
     img.save("testpil.jpg")
 end = time() - start
 print " - write JPEG %0.3f sec" % end
+
+# TIFF read
+start = time()
+for i in xrange(RW_COUNT):
+    pil_open(TIFF).load()
+end = time() - start
+print " - read LZW TIFF %0.3f sec" % end
+
+print " - read biton G4 TIFF: decoder group4 not available"
 
 # resize
 filters = (("nearest", NEAREST), ("bilinear", BILINEAR),

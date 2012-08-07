@@ -83,18 +83,36 @@ test image: 1210x1778 24bpp JPEG (pon.jpg)
 platform: Ubuntu 12.04 X86_64
 hardware: Intel Xeon hexacore W3680@3.33GHz with 24 GB RAM
 
-smc.freeimage, FreeImage 3.15.3 with jpeg turbo
- - read 9.237 sec
- - read 3.858 sec (w/o restart markers)
- - write 5.870 sec
 smc.freeimage, FreeImage 3.15.3 standard
- - read 12.857 sec
- - read 6.629 sec (resaved)
- - write 21.817 sec
+ - read JPEG 12.857 sec
+ - read JPEG 6.629 sec (resaved)
+ - write JPEG 21.817 sec
+smc.freeimage, FreeImage 3.15.3 with jpeg turbo
+ - read JPEG 9.297 sec
+ - read JPEG 3.909 sec (resaved)
+ - write JPEG 5.857 sec
+ - read LZW TIFF 17.947 sec
+ - read biton G4 TIFF 2.068 sec
+ - resize 3.850 sec (box)
+ - resize 5.022 sec (bilinear)
+ - resize 7.942 sec (bspline)
+ - resize 7.222 sec (bicubic)
+ - resize 7.941 sec (catmull rom spline)
+ - resize 10.232 sec (lanczos3)
+ - tiff numpy.asarray() with bytescale() 0.006 sec
+ - tiff load + numpy.asarray() with bytescale() 18.043 sec
 PIL 1.1.7
- - read 30.505 sec
- - read 22.998 sec (resaved)
- - write 34.439 sec
+ - read JPEG 30.389 sec
+ - read JPEG 23.118 sec (resaved)
+ - write JPEG 34.405 sec
+ - read LZW TIFF 21.596 sec
+ - read biton G4 TIFF: decoder group4 not available
+ - resize 0.032 sec (nearest)
+ - resize 1.074 sec (bilinear)
+ - resize 2.924 sec (bicubic)
+ - resize 8.056 sec (antialias)
+ - tiff scipy fromimage() with bytescale() 1.165 sec
+ - tiff scipy imread() with bytescale() 22.939 sec
 
 
 FreeImage + libjpeg-turbo

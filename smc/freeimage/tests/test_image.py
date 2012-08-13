@@ -39,7 +39,8 @@ from pprint import pprint
 
 from smc.freeimage import *
 from smc.freeimage import ficonstants as fi
-from smc.freeimage.tests.common import owner, IMG, TIFF, TIFF2, BITON, MULTIPAGE, BUFFERTEST
+from smc.freeimage.tests.common import owner
+from smc.freeimage.tests.common import IMG, TIFF, TIFF2, BITON, MULTIPAGE, BUFFERTEST, CMYK
 
 try:
     import numpy
@@ -57,7 +58,7 @@ class TestImageBase(unittest2.TestCase):
     remove_tmp = True
 
     image_attrs = ("_img", "_tiff", "_tiff2", "_biton", "_multipage",
-                   "_buffertest")
+                   "_buffertest", "_cmyk")
 
     def setUp(self):
         for name in self.image_attrs:
@@ -111,6 +112,12 @@ class TestImageBase(unittest2.TestCase):
         if self._buffertest is None:
             self._buffertest = Image(BUFFERTEST)
         return self._buffertest
+
+    @property
+    def cmyk(self):
+        if self._cmyk is None:
+            self._cmyk = Image(CMYK, flags=CONSTANTS.TIFF_CMYK)
+        return self._cmyk
 
     def _test_jpeg(self, img):
         self.assertEqual(img.format, FI_FORMAT.FIF_JPEG)
@@ -557,6 +564,13 @@ class TestImageNewBuffer(TestImageBase):
         self.assertEqual(arr[0, 0], 0)
         self.assertEqual(arr[1, 0], 255)
         self.assertEqual(list(arr[2]), [80, 112, 160, 192, 240])
+
+        img = self.cmyk
+        print img.getMetadata()
+        #print img.filename
+        #print img.type, img.bpp, img.icc_cmyk, img
+        arr = numpy.asarray(img)
+        print(arr)
 
     def test_rawbytes(self):
         img = self.buffertest

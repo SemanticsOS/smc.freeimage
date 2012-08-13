@@ -1227,7 +1227,7 @@ cdef class Image:
         Returns true if the image has an ICC profile
         """
         def __get__(self):
-            if self._icc == NULL:
+            if self._icc is NULL:
                 self._check_access(0)
                 with nogil:
                     self._icc = fi.FreeImage_GetICCProfile(self._dib)
@@ -1240,7 +1240,11 @@ cdef class Image:
         """icc_cmyk -> bool
         """
         def __get__(self):
-            if not self.has_icc:
+            if self._icc is NULL:
+                self._check_access(0)
+                with nogil:
+                    self._icc = fi.FreeImage_GetICCProfile(self._dib)
+            if self._icc is NULL:
                 return None
             if (self._icc.flags & fi.FIICC_COLOR_IS_CMYK) == fi.FIICC_COLOR_IS_CMYK:
                 return True

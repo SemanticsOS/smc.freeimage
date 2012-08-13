@@ -26,6 +26,8 @@ smc.freeimage 0.2
 
 - enhanced FormatInfo class and fixed a possible segfault
 
+- fixed icc_cmyk property handling of missing ICC profile
+
 
 smc.freeimage 0.1
 =================

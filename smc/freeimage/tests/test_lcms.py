@@ -11,38 +11,32 @@
 # Purpose     : ICC / LCMS unit tests
 #=============================================================================
 #
-# COVERED CODE IS PROVIDED UNDER THIS LICENSE ON AN "AS IS" BASIS, WITHOUT 
-# WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, WITHOUT 
+# COVERED CODE IS PROVIDED UNDER THIS LICENSE ON AN "AS IS" BASIS, WITHOUT
+# WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, WITHOUT
 # LIMITATION, WARRANTIES THAT THE COVERED CODE IS FREE OF DEFECTS, MERCHANTABLE,
 # FIT FOR A PARTICULAR PURPOSE OR NON-INFRINGING. THE ENTIRE RISK AS TO THE
 # QUALITY AND PERFORMANCE OF THE COVERED CODE IS WITH YOU. SHOULD ANY COVERED
-# CODE PROVE DEFECTIVE IN ANY RESPECT, YOU (NOT THE INITIAL DEVELOPER OR ANY 
-# OTHER CONTRIBUTOR) ASSUME THE COST OF ANY NECESSARY SERVICING, REPAIR OR 
+# CODE PROVE DEFECTIVE IN ANY RESPECT, YOU (NOT THE INITIAL DEVELOPER OR ANY
+# OTHER CONTRIBUTOR) ASSUME THE COST OF ANY NECESSARY SERVICING, REPAIR OR
 # CORRECTION. THIS DISCLAIMER OF WARRANTY CONSTITUTES AN ESSENTIAL PART OF
 # THIS LICENSE. NO USE OF ANY COVERED CODE IS AUTHORIZED HEREUNDER EXCEPT UNDER
 # THIS DISCLAIMER.
 #
 
-#@PydevCodeAnalysisIgnore
+
 from __future__ import with_statement
 import os
-import sys
-try:
-    import unittest2
-except ImportError:
-    import unittest as unittest2
-
 import tempfile
-import shutil
-from time import time
-from glob import glob
+import datetime
+#from time import time
 from pprint import pprint
 
-from smc.freeimage import *
-from smc.freeimage import ficonstants as fi
+from smc.freeimage import (LCMSTransformation, LCMSIccCache, LCMSProfileInfo,
+                           getLCMSVersion)
 from smc.freeimage import lcmsconstants as lcms
 from smc.freeimage.tests.test_image import TestImageBase
-from smc.freeimage.tests.common import owner, ICMS
+from smc.freeimage.tests.common import owner, ICMS, unittest2
+
 
 class TestLCMS(TestImageBase):
 
@@ -50,7 +44,7 @@ class TestLCMS(TestImageBase):
     def test_lcms(self):
         self.tmpdir = tempfile.mkdtemp()
         self.tiff.save(os.path.join(self.tmpdir, "lzw_pon_orig.jpg"))
-        start = time()
+        #start = time()
         self.tiff.iccTransform()
         #print time() - start
         self.tiff.save(os.path.join(self.tmpdir, "lzw_pon_transform.jpg"))
@@ -64,7 +58,7 @@ class TestLCMS(TestImageBase):
         self.tmpdir = tempfile.mkdtemp()
         icc = self.tiff.getICC()
         trafo = LCMSTransformation(icc)
-        start = time()
+        #start = time()
         self.tiff.iccTransform(trafo)
         #print time() - start
         self.tiff.save(os.path.join(self.tmpdir, "lzw_pon_transform2.jpg"))
@@ -72,8 +66,8 @@ class TestLCMS(TestImageBase):
     @owner("c.heimes")
     def test_lcmsCreateTrafo(self):
         icc = self.tiff.getICC()
-        start = time()
-        for i in range(10):
+        #start = time()
+        for _ in range(10):
             LCMSTransformation(icc)
         #print time() - start
 
@@ -86,11 +80,14 @@ class TestLCMS(TestImageBase):
         self.assertEqual(cache.keys(), [])
         icc = self.tiff.getICC()
         self.assertEqual(len(icc), 308804)
-        cache.lookupByImage(self.tiff, b"sRGB", lcms.TYPE_BGR_8, lcms.INTENT_PERCEPTUAL, 0)
+        cache.lookupByImage(self.tiff, b"sRGB", lcms.TYPE_BGR_8,
+                            lcms.INTENT_PERCEPTUAL, 0)
         self.assertEqual(cache.creations, 1)
-        self.assertEqual(list(cache), [(icc, b"sRGB", lcms.TYPE_BGR_8, lcms.INTENT_PERCEPTUAL, 0)])
+        self.assertEqual(list(cache), [(icc, b"sRGB", lcms.TYPE_BGR_8,
+                                        lcms.INTENT_PERCEPTUAL, 0)])
 
-        cache.lookupByImage(self.tiff, b"sRGB", lcms.TYPE_BGR_8, lcms.INTENT_PERCEPTUAL, 0)
+        cache.lookupByImage(self.tiff, b"sRGB", lcms.TYPE_BGR_8,
+                            lcms.INTENT_PERCEPTUAL, 0)
         self.assertEqual(cache.creations, 1)
         cache.lookup(icc, b"sRGB", lcms.TYPE_BGR_8, lcms.INTENT_PERCEPTUAL, 0)
         self.assertEqual(cache.creations, 1)
@@ -105,11 +102,12 @@ class TestLCMS(TestImageBase):
         self.assertIn(entry, cache)
 
         cache.clear()
-        start = time()
+        #start = time()
         cache.applyTransform(self.tiff)
         cache.applyTransform(self.tiff, inprofile=self.tiff.getICC())
         self.assertEqual(cache.creations, 3)
-        self.assertEqual(list(cache), [(icc, b"sRGB", lcms.TYPE_BGR_8, lcms.INTENT_PERCEPTUAL, 0)])
+        self.assertEqual(list(cache), [(icc, b"sRGB", lcms.TYPE_BGR_8,
+                                        lcms.INTENT_PERCEPTUAL, 0)])
         self.tiff.save(os.path.join(self.tmpdir, "lzw_pon_transform_cache.jpg"))
         self.assertEqual(cache.creations, 3)
         #print time() - start
@@ -129,13 +127,94 @@ class TestLCMS(TestImageBase):
     def test_lcmsProfileInfo(self):
         icc = self.tiff.getICC()
         info = LCMSProfileInfo(data=icc)
-        #pprint(getIntents())
-        #pprint(info.info)
+        # xyY is (nan, nan, 0)
+        self.assertEqual(info.info.pop("mediaBlackPoint")[0],
+                         (0.0, 0.0, 0.0))
+        self.assertEqual(info.info, {
+            'attributes': 0,
+            'blueColorant': ((0.0779876708984375, 0.0288238525390625, 0.787200927734375),
+                             (0.08723331626557432,
+                              0.03224099675712579,
+                              0.0288238525390625)),
+            'bluePrimary': ((0.027524196576962368,
+                             0.025689563803155124,
+                             0.21284289725940653),
+                            (0.10345238800321421,
+                             0.09655674107566031,
+                             0.025689563803155124)),
+            'chromaticAdaptation': (((1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)),
+                                    ((1.0, 0.0, 0.0), (0.0, 1.0, 1.0), (0.0, 0.0, 0.0))),
+            'chromaticity': None,
+            'colorSpace': 'RGB ',
+            'colorantTable': None,
+            'colorantTableOut': None,
+            'colorimetricIntent': None,
+            'connectionSpace': 'Lab ',
+            'copyright': u'Copyright by LOGO GmbH, Steinfurt',
+            'creationDate': datetime.datetime(2007, 5, 15, 14, 54, 48),
+            'deviceClass': 'scnr',
+            'greenColorant': ((0.435150146484375, 0.793792724609375, 0.0377044677734375),
+                              (0.3435448314078857, 0.626688029297322, 0.793792724609375)),
+            'greenPrimary': ((0.48265465727581613,
+                              0.7099301967082283,
+                              0.1347958887652112),
+                             (0.3636143283773632,
+                              0.5348353896093363,
+                              0.7099301967082283)),
+            'headerFlags': 0,
+            'headerManufacturer': None,
+            'headerModel': None,
+            'iccMeasurementCondition': None,
+            'iccVersion': '0x2400000L',
+            'iccViewingCondition': None,
+            'isCLUT': {0: (True, False, True),
+                       1: (True, False, True),
+                       2: (True, False, True),
+                       3: (True, False, True),
+                       10: (False, False, True),
+                       11: (False, False, True),
+                       12: (False, False, True),
+                       13: (False, False, True),
+                       14: (False, False, True),
+                       15: (False, False, True)},
+            'isIntentSupported': {0: (True, True, True),
+                                  1: (True, True, True),
+                                  2: (True, True, True),
+                                  3: (True, True, True),
+                                  10: (True, True, True),
+                                  11: (True, True, True),
+                                  12: (True, True, True),
+                                  13: (True, True, True),
+                                  14: (True, True, True),
+                                  15: (True, True, True)},
+            'isMatrixShaper': True,
+            'luminance': None,
+            'manufacturer': None,
+            'mediaWhitePoint': ((0.964202880859375, 1.0, 0.8249053955078125),
+                                (0.3457029219802284, 0.3585375327567059, 1.0)),
+            'mediaWhitePointTemperature': 5000.722328847392,
+            'model': None,
+            'perceptualRenderingIntentGamut': None,
+            'profileDescription': u'OS10000_A2_B5_mG',
+            'profileid': '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+            'redColorant': ((0.4510650634765625, 0.1773834228515625, 0.0),
+                            (0.7177438935560628, 0.2822561064439373, 0.1773834228515625)),
+            'redPrimary': ((0.39318906319522284,
+                            0.22774360756557144,
+                            0.018428141315212088),
+                           (0.6149721030266726,
+                            0.35620513998361475,
+                            0.22774360756557144)),
+            'renderingIntent': 0,
+            'saturationRenderingIntentGamut': None,
+            'screeningDescription': None,
+            'target': None,
+            'technology': None,
+            'version': 2.4,
+            'viewingCondition': None})
 
         for icm in ICMS:
-            #print icm
             info = LCMSProfileInfo(filename=icm)
-            #pprint(info.info)
 
 
 def test_main():

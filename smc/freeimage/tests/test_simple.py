@@ -67,6 +67,8 @@ class SimpleStuff(unittest2.TestCase):
         self.assertEqual(info.format, fi.FIF_JPEG)
         self.assertEqual(info.mimetype, "image/jpeg")
         self.assertEqual(info.name, "JPEG")
+        self.assertEqual(unicode(info), "JPEG")
+        self.assertEqual(repr(info), "<FormatInfo 'JPEG' (2)>")
         self.assertEqual(info.description, "JPEG - JFIF Compliant")
         self.assertEqual(info.magic_reg_expr, b"^\xff\xd8\xff")
         self.assert_(info.supports_reading)
@@ -74,11 +76,28 @@ class SimpleStuff(unittest2.TestCase):
         self.assert_(info.supports_icc)
         self.assert_(info.supports_nopixels)
         self.assertEqual(info.getExtensions(), ['jpg', 'jif', 'jpeg', 'jpe'])
+        self.assertEqual(info.extensions, ['jpg', 'jif', 'jpeg', 'jpe'])
         self.assert_(info.getSupportsExportType(fi.FIT_BITMAP))
         self.assert_(info.getSupportsExportBPP(24))
+        self.assertEqual(info.supported_export_types, ["bitmap"])
+        self.assertEqual(info.supported_export_bpp, [8, 24])
 
         info = FormatInfo(fi.FIF_TIFF)
         self.assert_(info.supports_nopixels)
+        self.assertEqual(info.supported_export_types,
+                         ["bitmap", "unsigned int16", "int16", "unsigned int32",
+                          "int32", "float", "double", "complex", "RGB int16",
+                          "RGBA int16", "RGB float", "RGBA float"])
+        self.assertEqual(info.supported_export_bpp, [1, 4, 8, 24, 32])
+
+        info = FormatInfo(fi.FIF_RAW)
+        self.assertEqual(info.magic_reg_expr, None)
+        self.assertEqual(info.extensions,
+                         ['3fr', 'arw', 'bay', 'bmq', 'cap', 'cine', 'cr2', 'crw', 'cs1',
+                          'dc2', 'dcr', 'drf', 'dsc', 'dng', 'erf', 'fff', 'ia', 'iiq',
+                          'k25', 'kc2', 'kdc', 'mdc', 'mef', 'mos', 'mrw', 'nef', 'nrw',
+                          'orf', 'pef', 'ptx', 'pxn', 'qtk', 'raf', 'raw', 'rdc', 'rw2',
+                          'rwl', 'rwz', 'sr2', 'srf', 'srw', 'sti'])
 
         info = FormatInfo.from_filename(IMG)
         self.assertEqual(info.format, fi.FIF_JPEG)
@@ -112,6 +131,9 @@ class SimpleStuff(unittest2.TestCase):
             self.assertEqual(err.args, ('Unable to detect format.',))
         else:
             self.fail("OperationError expected")
+
+        formats = list(FormatInfo.list())
+        self.assertEqual(len(formats), 35)
 
 
     @owner("c.heimes")

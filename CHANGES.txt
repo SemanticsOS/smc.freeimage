@@ -24,6 +24,8 @@ smc.freeimage 0.2
 
 - added --without-turbo
 
+- enhanced FormatInfo class and fixed a possible segfault
+
 
 smc.freeimage 0.1
 =================

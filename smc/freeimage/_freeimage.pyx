@@ -165,6 +165,23 @@ _COLOR_TYPE_NAMES = {
     fi.FIC_CMYK : "CMYK"
 }
 
+_BPP = (1, 4, 8, 16, 24, 32)
+
+_IMAGE_TYPES = (
+    (fi.FIT_BITMAP, "bitmap"),
+    (fi.FIT_UINT16, "unsigned int16"),
+    (fi.FIT_INT16, "int16"),
+    (fi.FIT_UINT32, "unsigned int32"),
+    (fi.FIT_INT32, "int32"),
+    (fi.FIT_FLOAT, "float"),
+    (fi.FIT_DOUBLE, "double"),
+    (fi.FIT_COMPLEX, "complex"),
+    (fi.FIT_RGB16, "RGB int16"),
+    (fi.FIT_RGBA16, "RGBA int16"),
+    (fi.FIT_RGBF, "RGB float"),
+    (fi.FIT_RGBAF, "RGBA float"),
+)
+
 
 # ***************************************************************************
 # error handling
@@ -2099,71 +2116,111 @@ def FormatInfo_from_mimetype(cls, mime):
     format = fi.FreeImage_GetFIFFromMime(mime)
     return cls(format)
 
+def FormatInfo_list(cls):
+    """Iterate over all supported formats
+    """
+    return [cls(format) for format in range(fi.FreeImage_GetFIFCount())]
+
+
 cdef class FormatInfo:
-    cdef fi.FREE_IMAGE_FORMAT _format
+    cdef readonly fi.FREE_IMAGE_FORMAT format
+    cdef readonly object name
 
     def __init__(self, int format):
+        cdef char* name
         if format == fi.FIF_UNKNOWN:
             raise dispatchFIError(OperationError, "Unable to detect format.")
-        if format < 0 or format > fi.FreeImage_GetFIFCount() +1:
+
+        self.format = <fi.FREE_IMAGE_FORMAT>format
+        name = fi.FreeImage_GetFormatFromFIF(self.format)
+        if name is NULL:
             raise ValueError("Invalid format %i" % format)
-        self._format = <fi.FREE_IMAGE_FORMAT>format
+        self.name = funicode(name)
 
     from_filename = classmethod(FormatInfo_from_filename)
     from_file = classmethod(FormatInfo_from_file)
     from_mimetype = classmethod(FormatInfo_from_mimetype)
+    list = classmethod(FormatInfo_list)
 
     def __int__(self):
-        return self._format
+        return self.format
 
-    property format:
-        def __get__(self):
-            return self._format
+    def __unicode__(self):
+        return self.name
+
+    def __repr__(self):
+        return "<FormatInfo '%s' (%i)>" % (self.name, self.format)
 
     property mimetype:
         def __get__(self):
-            return funicode(fi.FreeImage_GetFIFMimeType(self._format))
-
-    property name:
-        def __get__(self):
-            return funicode(fi.FreeImage_GetFormatFromFIF(self._format))
+            cdef char* mimetype
+            mimetype = fi.FreeImage_GetFIFMimeType(self.format)
+            if mimetype is NULL:
+                return None
+            else:
+                return funicode(mimetype)
 
     property description:
         def __get__(self):
-            return funicode(fi.FreeImage_GetFIFDescription(self._format))
+            cdef char* desc
+            desc = fi.FreeImage_GetFIFDescription(self.format)
+            if desc is NULL:
+                return None
+            else:
+                return funicode(desc)
 
     property magic_reg_expr:
         def __get__(self):
-            return fi.FreeImage_GetFIFRegExpr(self._format)
+            cdef char* regexpr
+            regexpr = fi.FreeImage_GetFIFRegExpr(self.format)
+            if regexpr is NULL:
+                return None
+            else:
+                return regexpr
 
     property supports_reading:
         def __get__(self):
-            return fi.FreeImage_FIFSupportsReading(self._format)
+            return fi.FreeImage_FIFSupportsReading(self.format)
 
     property supports_writing:
         def __get__(self):
-            return fi.FreeImage_FIFSupportsWriting(self._format)
+            return fi.FreeImage_FIFSupportsWriting(self.format)
 
     property supports_icc:
         def __get__(self):
-            return fi.FreeImage_FIFSupportsICCProfiles(self._format)
+            return fi.FreeImage_FIFSupportsICCProfiles(self.format)
 
     property supports_nopixels:
         def __get__(self):
-            return fi.FreeImage_FIFSupportsNoPixels(self._format)
+            return fi.FreeImage_FIFSupportsNoPixels(self.format)
+
+    property extensions:
+        def __get__(self):
+            exts = fi.FreeImage_GetFIFExtensionList(self.format)
+            return [funicode(ext) for ext in exts.split(b',')]
+
+    property supported_export_types:
+        def __get__(self):
+            return [name for fit, name in _IMAGE_TYPES
+                    if fi.FreeImage_FIFSupportsExportType(self.format,
+                                                          <fi.FREE_IMAGE_TYPE>fit)]
+
+    property supported_export_bpp:
+        def __get__(self):
+            return [bpp for bpp in _BPP
+                    if fi.FreeImage_FIFSupportsExportBPP(self.format, bpp)]
 
     def getExtensions(self):
-        exts = fi.FreeImage_GetFIFExtensionList(self._format)
-        return [funicode(ext) for ext in exts.split(b',')]
+        return self.extensions
 
-    def getSupportsExportType(self, int type):
-        if type < 0 or type > fi.FIT_RGBAF:
-            raise ValueError("Invalid type %i" % type)
-        return fi.FreeImage_FIFSupportsExportType(self._format,
-                                                  <fi.FREE_IMAGE_TYPE>type)
+    def getSupportsExportType(self, int fit):
+        if fit < 0 or fit > fi.FIT_RGBAF:
+            raise ValueError("Invalid type %i" % fit)
+        return fi.FreeImage_FIFSupportsExportType(self.format,
+                                                  <fi.FREE_IMAGE_TYPE>fit)
 
     def getSupportsExportBPP(self, int bpp):
-        return fi.FreeImage_FIFSupportsExportBPP(self._format, bpp)
+        return fi.FreeImage_FIFSupportsExportBPP(self.format, bpp)
 
 
 #--- module functions

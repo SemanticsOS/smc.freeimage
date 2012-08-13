@@ -125,6 +125,7 @@ class TestLCMS(TestImageBase):
 
     @owner("c.heimes")
     def test_lcmsProfileInfo(self):
+        self.maxDiff = None
         icc = self.tiff.getICC()
         info = LCMSProfileInfo(data=icc)
         # xyY is (nan, nan, 0)
@@ -150,7 +151,7 @@ class TestLCMS(TestImageBase):
             'colorantTableOut': None,
             'colorimetricIntent': None,
             'connectionSpace': 'Lab ',
-            'copyright': u'Copyright by LOGO GmbH, Steinfurt',
+            'copyright': 'Copyright by LOGO GmbH, Steinfurt',
             'creationDate': datetime.datetime(2007, 5, 15, 14, 54, 48),
             'deviceClass': 'scnr',
             'greenColorant': ((0.435150146484375, 0.793792724609375, 0.0377044677734375),
@@ -165,7 +166,7 @@ class TestLCMS(TestImageBase):
             'headerManufacturer': None,
             'headerModel': None,
             'iccMeasurementCondition': None,
-            'iccVersion': '0x2400000L',
+            'iccVersion': '0x2400000',
             'iccViewingCondition': None,
             'isCLUT': {0: (True, False, True),
                        1: (True, False, True),
@@ -195,8 +196,8 @@ class TestLCMS(TestImageBase):
             'mediaWhitePointTemperature': 5000.722328847392,
             'model': None,
             'perceptualRenderingIntentGamut': None,
-            'profileDescription': u'OS10000_A2_B5_mG',
-            'profileid': '\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+            'profileDescription': 'OS10000_A2_B5_mG',
+            'profileid': b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
             'redColorant': ((0.4510650634765625, 0.1773834228515625, 0.0),
                             (0.7177438935560628, 0.2822561064439373, 0.1773834228515625)),
             'redPrimary': ((0.39318906319522284,

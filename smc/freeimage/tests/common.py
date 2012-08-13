@@ -24,8 +24,9 @@
 #
 # testing package
 __all__ = ["IMG", "TIFF", "BITON", "ICMS", "MULTIPAGE", "BUFFERTEST",
-           "CMYK", "owner", "unittest2"]
+           "CMYK", "PY3", "owner", "unittest2"]
 import os
+import sys
 from glob import glob
 
 try:
@@ -44,6 +45,8 @@ def find_testdata(): # pragma: no cover
         if parent == current:
             raise RuntimeError("Cannot find testdata directory")
         current = parent
+
+PY3 = sys.version_info[0] == 3
 
 TESTDATA = find_testdata()
 

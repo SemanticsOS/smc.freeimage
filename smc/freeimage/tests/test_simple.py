@@ -28,7 +28,7 @@ from smc import freeimage
 from smc.freeimage import FormatInfo, OperationError
 from smc.freeimage import ficonstants as fi
 from smc.freeimage.tests.test_image import IMG
-from smc.freeimage.tests.common import owner, unittest2
+from smc.freeimage.tests.common import owner, unittest2, PY3
 
 
 class SimpleStuff(unittest2.TestCase):
@@ -63,7 +63,10 @@ class SimpleStuff(unittest2.TestCase):
         self.assertEqual(info.format, fi.FIF_JPEG)
         self.assertEqual(info.mimetype, "image/jpeg")
         self.assertEqual(info.name, "JPEG")
-        self.assertEqual(unicode(info), "JPEG")
+        if PY3:
+            self.assertEqual(str(info), "JPEG")
+        else:
+            self.assertEqual(unicode(info), "JPEG")
         self.assertEqual(repr(info), "<FormatInfo 'JPEG' (2)>")
         self.assertEqual(info.description, "JPEG - JFIF Compliant")
         self.assertEqual(info.magic_reg_expr, b"^\xff\xd8\xff")

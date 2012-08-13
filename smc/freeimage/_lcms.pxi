@@ -383,7 +383,7 @@ cdef int lcmsFI(Image img, LCMSTransformation trafo) except * :
             lcms.cmsDoTransform(hTransform, < char *> bits, < char *> bits, width)
             bits += pitch
 
-cdef object int2str(unsigned int i):
+cdef object int2ascii(unsigned int i):
     cdef char out[5]
     if not i:
         return None
@@ -392,7 +392,7 @@ cdef object int2str(unsigned int i):
     out[2] = < char > (i >> 8)
     out[3] = < char > i
     out[4] = 0
-    return out
+    return out.decode("ascii")
 
 cdef xyz_py(lcms.cmsCIEXYZ * XYZ):
     cdef lcms.cmsCIExyY xyY[1]
@@ -536,7 +536,7 @@ cdef class LCMSProfileInfo(object):
         sig = < unsigned int *> lcms.cmsReadTag(self.hProfile, info)
         if sig is NULL:
             return None
-        return int2str(sig[0])
+        return int2ascii(sig[0])
 
     cdef _readICCMeasurementCond(self):
         cdef lcms.cmsICCMeasurementConditions * mc
@@ -601,19 +601,19 @@ cdef class LCMSProfileInfo(object):
                     pass
 
         self.info["headerFlags"] = int(lcms.cmsGetHeaderFlags(self.hProfile))
-        self.info["headerManufacturer"] = int2str(lcms.cmsGetHeaderManufacturer(self.hProfile))
-        self.info["headerModel"] = int2str(lcms.cmsGetHeaderModel(self.hProfile))
+        self.info["headerManufacturer"] = int2ascii(lcms.cmsGetHeaderManufacturer(self.hProfile))
+        self.info["headerModel"] = int2ascii(lcms.cmsGetHeaderModel(self.hProfile))
         lcms.cmsGetHeaderAttributes(self.hProfile, & attr)
         self.info["attributes"] = int(attr)
-        self.info["deviceClass"] = int2str(lcms.cmsGetDeviceClass(self.hProfile))
+        self.info["deviceClass"] = int2ascii(lcms.cmsGetDeviceClass(self.hProfile))
         self.info["version"] = lcms.cmsGetProfileVersion(self.hProfile)
-        self.info["iccVersion"] = hex(lcms.cmsGetEncodedICCversion(self.hProfile))
+        self.info["iccVersion"] = hex(int(lcms.cmsGetEncodedICCversion(self.hProfile)))
         lcms.cmsGetHeaderProfileID(self.hProfile, hid)
         self.info["profileid"] = cpython.PyBytes_FromStringAndSize(< char *> hid, 16)
 
         self.info["renderingIntent"] = int(lcms.cmsGetHeaderRenderingIntent(self.hProfile))
-        self.info["connectionSpace"] = int2str(lcms.cmsGetPCS(self.hProfile))
-        self.info["colorSpace"] = int2str(lcms.cmsGetColorSpace(self.hProfile))
+        self.info["connectionSpace"] = int2ascii(lcms.cmsGetPCS(self.hProfile))
+        self.info["colorSpace"] = int2ascii(lcms.cmsGetColorSpace(self.hProfile))
 
         self.info["target"] = self._readMLU(lcms.cmsSigCharTargetTag)
         self.info["copyright"] = self._readMLU(lcms.cmsSigCopyrightTag)

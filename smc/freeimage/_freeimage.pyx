@@ -2149,8 +2149,12 @@ cdef class FormatInfo:
     def __int__(self):
         return self.format
 
-    def __unicode__(self):
-        return self.name
+    if smc_fi.IS_PYTHON3:
+        def __unicode__(self):
+            return self.name
+    else:
+        def __str__(self):
+            return self.name
 
     def __repr__(self):
         return "<FormatInfo '%s' (%i)>" % (self.name, self.format)

@@ -28,6 +28,9 @@ smc.freeimage 0.2
 
 - fixed icc_cmyk property handling of missing ICC profile
 
+- added ImageDataRepresentation as central information place for mapping
+  of image and color type to buffer layout, LCMS types and PIL modes.
+
 
 smc.freeimage 0.1
 =================

@@ -29,10 +29,12 @@ import tempfile
 import shutil
 
 from smc.freeimage import (Image, Multipage, UnknownImageError, OperationError,
-                           jpegTransform, hasJPEGTurbo, getColorOrder)
+                           ImageDataRepresentation, jpegTransform, hasJPEGTurbo,
+                           getColorOrder)
 from smc.freeimage import (CONSTANTS, FI_FORMAT, FI_COLOR_TYPE, FI_TYPE,
                            FI_FILTER, FI_JPEG_OPERATION)
 from smc.freeimage import ficonstants as fi
+from smc.freeimage import lcmsconstants as lcms
 from smc.freeimage.tests.common import owner, unittest2
 from smc.freeimage.tests.common import IMG, TIFF, TIFF2, BITON, MULTIPAGE, BUFFERTEST, CMYK
 
@@ -437,6 +439,24 @@ class TestImage(TestImageBase):
     def test_adjust(self):
         # TODO: simple test, add more tests
         self.img.adjustColors(10, 10, 2.0, 1)
+
+    @owner("c.heimes")
+    def test_daterepresentation(self):
+        idr = ImageDataRepresentation.fromImage(self.img)
+        self.assertEqual(repr(idr),
+            "<ImageDataRepresentation image_type=1, color_type=2, bpp=24, format='B', "
+            "itemsize=1, pixelcount=3, mode='RGB', lcms_type=263193, pixel_layout='BGR'>")
+        self.assertEqual(idr.image_type, FI_TYPE.FIT_BITMAP)
+        self.assertEqual(idr.color_type, FI_COLOR_TYPE.FIC_RGB)
+        self.assertEqual(idr.lcms_type, lcms.TYPE_BGR_8)
+
+        idr = ImageDataRepresentation.fromImage(self.cmyk)
+        self.assertEqual(repr(idr),
+            "<ImageDataRepresentation image_type=1, color_type=5, bpp=32, format='B', "
+            "itemsize=1, pixelcount=4, mode='CMYK', lcms_type=393249, pixel_layout='CMYK'>")
+        self.assertEqual(idr.image_type, FI_TYPE.FIT_BITMAP)
+        self.assertEqual(idr.color_type, FI_COLOR_TYPE.FIC_CMYK)
+        self.assertEqual(idr.lcms_type, lcms.TYPE_CMYK_8)
 
 
 class TestImageOldBuffer(TestImageBase):
@@ -891,13 +911,14 @@ def test_memory():
 if __name__ == "__main__": # pragma: no cover
     suite = unittest2.TestSuite()
     #suite.addTest(TestMultiPage("test_multipage"))
-    suite.addTest(unittest2.defaultTestLoader.loadTestsFromTestCase(TestImageNewBuffer))
+    #suite.addTest(unittest2.defaultTestLoader.loadTestsFromTestCase(TestImageNewBuffer))
     #suite.addTest(TestImageNewBuffer("test_newbuffer"))
     #suite.addTest(TestImageNewBuffer("test_newbuffer_numpy"))
     #suite.addTest(TestImageNewBuffer("test_rawbytes"))
     #suite.addTest(TestMetadata("test_icc"))
     #suite.addTest(TestImage("test_rotation"))
     #suite.addTest(TestImage("test_toBuffer_PIL"))
+    suite.addTest(TestImage("test_daterepresentation"))
     #suite.addTest(TestMetadata("test_metadata"))
     #suite = test_main()
     unittest2.TextTestRunner(verbosity=2).run(suite)

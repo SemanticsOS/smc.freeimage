@@ -40,7 +40,7 @@ from logging import getLogger
 __all__ = (
     "Image", "Multipage", "LCMSTransformation", "LCMSException",
     "FreeImageError", "UnknownImageError", "LoadError", "SaveError", "OperationError",
-    "getVersion", "getCompiledFor", "getCopyright", "FormatInfo",
+    "getVersion", "getCompiledFor", "getCopyright", "FormatInfo", "ImageDataRepresentation",
     "getColorIndexRGBA", "getColorMask555", "getColorMask565", "getColorMaskRGBA",
     "getColorOrder", "getColorShift555", "getColorShift565", "getColorShiftRGBA",
     "getFormatCount", "jpegTransform", "lookupX11Color", "lookupSVGColor",
@@ -2136,7 +2136,7 @@ cdef class FormatInfo:
             raise dispatchFIError(OperationError, "Unable to detect format.")
 
         self.format = <fi.FREE_IMAGE_FORMAT>format
-        name = fi.FreeImage_GetFormatFromFIF(self.format)
+        name = <char*>fi.FreeImage_GetFormatFromFIF(self.format)
         if name is NULL:
             raise ValueError("Invalid format %i" % format)
         self.name = funicode(name)
@@ -2162,7 +2162,7 @@ cdef class FormatInfo:
     property mimetype:
         def __get__(self):
             cdef char* mimetype
-            mimetype = fi.FreeImage_GetFIFMimeType(self.format)
+            mimetype = <char*>fi.FreeImage_GetFIFMimeType(self.format)
             if mimetype is NULL:
                 return None
             else:
@@ -2171,7 +2171,7 @@ cdef class FormatInfo:
     property description:
         def __get__(self):
             cdef char* desc
-            desc = fi.FreeImage_GetFIFDescription(self.format)
+            desc = <char*>fi.FreeImage_GetFIFDescription(self.format)
             if desc is NULL:
                 return None
             else:
@@ -2180,7 +2180,7 @@ cdef class FormatInfo:
     property magic_reg_expr:
         def __get__(self):
             cdef char* regexpr
-            regexpr = fi.FreeImage_GetFIFRegExpr(self.format)
+            regexpr = <char*>fi.FreeImage_GetFIFRegExpr(self.format)
             if regexpr is NULL:
                 return None
             else:
@@ -2204,7 +2204,8 @@ cdef class FormatInfo:
 
     property extensions:
         def __get__(self):
-            exts = fi.FreeImage_GetFIFExtensionList(self.format)
+            cdef char* exts
+            exts = <char*>fi.FreeImage_GetFIFExtensionList(self.format)
             return [funicode(ext) for ext in exts.split(b',')]
 
     property supported_export_types:
@@ -2229,6 +2230,241 @@ cdef class FormatInfo:
 
     def getSupportsExportBPP(self, int bpp):
         return fi.FreeImage_FIFSupportsExportBPP(self.format, bpp)
+
+
+# image data representation helper
+
+def ImageDataRepresentation_fromImage(cls, Image img):
+    return ImageDateRepresentation_fromDib(cls, img._dib)
+
+cdef ImageDateRepresentation_fromDib(cls, fi.FIBITMAP *dib):
+    cdef fi.FREE_IMAGE_TYPE image_type
+    cdef fi.FREE_IMAGE_COLOR_TYPE color_type
+    cdef unsigned int bpp=0
+
+    image_type = fi.FreeImage_GetImageType(dib)
+    if image_type == fi.FIT_BITMAP:
+        bpp = fi.FreeImage_GetBPP(dib)
+        # special handling for 32bpp as FreeImage scans an image for used alpha channel
+        if bpp == 32:
+            if fi.FreeImage_GetICCProfile(dib).flags & fi.FIICC_COLOR_IS_CMYK:
+                color_type = fi.FIC_CMYK
+            else:
+                color_type = fi.FIC_RGBALPHA
+        else:
+            color_type = fi.FreeImage_GetColorType(dib)
+    else:
+        color_type = fi.FreeImage_GetColorType(dib)
+
+    return cls(image_type, color_type, bpp)
+
+
+DEF FORMAT_LENGTH = 2
+DEF MODE_LENGTH = 8
+DEF PIXEL_LAYOUT_LENGTH = 8
+
+cdef class ImageDataRepresentation:
+    # FreeImage image / color type
+    cdef readonly fi.FREE_IMAGE_TYPE image_type
+    cdef readonly fi.FREE_IMAGE_COLOR_TYPE color_type
+    cdef readonly unsigned int bpp
+
+    # buffer protocol information
+    cdef readonly char format[FORMAT_LENGTH]
+    cdef readonly Py_ssize_t itemsize
+    cdef readonly Py_ssize_t pixelcount
+
+    # PIL compatible mode
+    cdef readonly char mode[MODE_LENGTH]
+
+    # LCMS
+    cdef readonly unsigned int lcms_type
+
+    # pixel layout
+    # b: b/w or gray scale, min is black
+    # w: b/w or gray scale, min is white (inverted)
+    # p: palette
+    # RGB: RGB
+    # BGR: RGB inverted byte order
+    # RGBA: RGB with alpa channel
+    # BGRA: RGBA inverted byte order
+    # RGBX: RGB with unused alpa channel
+    # BGRX: RGBX inverted byte order
+    # CMYK
+    cdef readonly char pixel_layout[PIXEL_LAYOUT_LENGTH]
+
+    fromImage = classmethod(ImageDataRepresentation_fromImage)
+
+    def __init__(self, int image_type, int color_type, int bpp=0):
+        cdef bint rgb_order, minisblack
+        cdef bytes format, pixel_layout, mode
+
+        self.image_type = <fi.FREE_IMAGE_TYPE>image_type
+        self.color_type = <fi.FREE_IMAGE_COLOR_TYPE>color_type
+        self.bpp = bpp
+
+        if self.image_type == fi.FIT_BITMAP:
+            if bpp not in (1, 4, 8, 16, 24, 32):
+                raise ValueError("bitmap must have bpp value of 1, 4, 8, 16, 24 or 32")
+        elif bpp != 0:
+            raise ValueError("non bitmap must have no bpp value")
+
+        string.strncpy(self.format, b"", FORMAT_LENGTH)
+        self.itemsize = 0
+        self.pixelcount = 0
+        string.strncpy(self.mode, b"", MODE_LENGTH)
+        self.lcms_type = 0
+        string.strncpy(self.pixel_layout, b"", PIXEL_LAYOUT_LENGTH)
+
+        rgb_order = fi.FREEIMAGE_COLORORDER == fi.FREEIMAGE_COLORORDER_RGB
+        minisblack = color_type != fi.FIC_MINISWHITE
+
+        # set pixel data
+        if color_type == fi.FIC_MINISBLACK:
+            pixel_layout = b"b"
+        elif color_type == fi.FIC_MINISWHITE:
+            pixel_layout = b"w"
+        elif color_type == fi.FIC_PALETTE:
+            pixel_layout = b"P"
+            mode = b"P"
+        elif color_type == fi.FIC_RGB:
+            if rgb_order:
+                pixel_layout = b"RGB" if bpp != 32 else b"RGBX"
+            else:
+                pixel_layout = b"BGR" if bpp != 32 else b"BGRX"
+            mode = b"RGB" if bpp != 32 else b"RGBX"
+        elif color_type == fi.FIC_RGBALPHA:
+            if rgb_order:
+                pixel_layout = b"RGBA"
+            else:
+                pixel_layout = b"BGRA"
+            mode = b"RGBA"
+        elif color_type == fi.FIC_CMYK:
+            pixel_layout = b"CMYK"
+            mode = b"CMYK"
+        else:
+            raise ValueError("invalid color type %i" % color_type)
+
+        # bitmap
+        if image_type == fi.FIT_BITMAP:
+            if bpp == 1:
+                # buffer not supported
+                mode = b"1"
+            elif bpp == 4:
+                # buffer not supported
+                #mode = ???
+                pass
+            elif bpp == 8:
+                format = b"B"
+                self.itemsize = 1
+                self.pixelcount = 1
+                self.lcms_type = lcms.TYPE_GRAY_8 if minisblack else lcms.TYPE_GRAY_8_REV
+            elif bpp == 16:
+                # 555 or 565
+                format = b"H"
+                self.itemsize = 2
+                self.pixelcount = 1
+                mode = b""
+                pixel_layout = b"" # XXX
+            elif bpp == 24:
+                format = b"B"
+                self.itemsize = 1
+                self.pixelcount = 3
+                self.lcms_type = lcms.TYPE_RGB_8 if rgb_order else lcms.TYPE_BGR_8
+            elif bpp == 32:
+                format = b"B"
+                self.itemsize = 1
+                self.pixelcount = 4
+                if color_type == fi.FIC_CMYK:
+                    self.lcms_type = lcms.TYPE_CMYK_8
+                else:
+                    self.lcms_type = lcms.TYPE_RGBA_8 if rgb_order else lcms.TYPE_BGRA_8
+        # other
+        elif image_type == fi. FIT_UINT16:
+            format = b"I"
+            self.itemsize = 4
+            self.pixelcount = 1
+            #mode = b"I;16"
+            mode = b""
+            #self.lcms_type = lcms.TYPE_GRAY_16
+        elif image_type == fi. FIT_INT16:
+            format = b"i"
+            self.itemsize = 4
+            self.pixelcount = 1
+            mode = b"I;16" # XXX endian?
+            self.lcms_type = lcms.TYPE_GRAY_16
+        elif image_type == fi. FIT_UINT32:
+            format = b"Q"
+            self.itemsize = 8
+            self.pixelcount = 1
+            #mode = b"I;32"
+            mode = b""
+        elif image_type == fi. FIT_INT32:
+            format = b"q"
+            self.itemsize = 8
+            self.pixelcount = 1
+            #mode = b"I;32"
+            mode = b""
+        elif image_type == fi. FIT_FLOAT:
+            format = b"f"
+            self.itemsize = 4
+            self.pixelcount = 1
+            mode = b"F"
+            self.lcms_type = lcms.TYPE_GRAY_FLT
+        elif image_type == fi. FIT_DOUBLE:
+            format = b"d"
+            self.itemsize = 8
+            self.pixelcount = 1
+            #mode = b"D"
+            mode = b""
+            self.lcms_type = lcms.TYPE_GRAY_DBL
+        elif image_type == fi. FIT_COMPLEX:
+            format = b"d"
+            self.itemsize = 8
+            self.pixelcount = 2
+            mode = b""
+        elif image_type == fi. FIT_RGB16:
+            format = b"H"
+            self.itemsize = 2
+            self.pixelcount = 3
+            mode = b""
+            self.lcms_type = lcms.TYPE_RGB_16 if rgb_order else lcms.TYPE_BGR_16
+        elif image_type == fi. FIT_RGBA16:
+            format = b"H"
+            self.itemsize = 2
+            self.pixelcount = 4
+            mode = b""
+            if color_type == fi.FIC_CMYK:
+                self.lcms_type = lcms.TYPE_CMYK_16
+            else:
+                self.lcms_type = lcms.TYPE_RGBA_16 if rgb_order else lcms.TYPE_BGRA_16
+        elif image_type == fi. FIT_RGBF:
+            format = b"f"
+            self.itemsize = 4
+            self.pixelcount = 3
+            mode = b""
+            self.lcms_type = lcms.TYPE_RGB_FLT
+        elif image_type == fi. FIT_RGBAF:
+            format = b"f"
+            self.itemsize = 4
+            self.pixelcount = 4
+            mode = b""
+            if color_type == fi.FIC_CMYK:
+                self.lcms_type = lcms.TYPE_CMYK_FLT
+            else:
+                self.lcms_type = lcms.TYPE_RGBA_FLT
+
+        string.strncpy(self.format, <char*>format, FORMAT_LENGTH)
+        string.strncpy(self.mode, <char*>mode, MODE_LENGTH)
+        string.strncpy(self.pixel_layout, <char*>pixel_layout, PIXEL_LAYOUT_LENGTH)
+
+    def __repr__(self):
+        return ("<ImageDataRepresentation image_type=%i, color_type=%i, bpp=%i, "
+                "format='%s', itemsize=%i, pixelcount=%i, mode='%s', "
+                "lcms_type=%i, pixel_layout='%s'>" %
+                (self.image_type, self.color_type, self.bpp,
+                 self.format, self.itemsize, self.pixelcount, self.mode,
+                 self.lcms_type, self.pixel_layout))
 
 
 #--- module functions

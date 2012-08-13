@@ -566,11 +566,22 @@ class TestImageNewBuffer(TestImageBase):
         self.assertEqual(list(arr[2]), [80, 112, 160, 192, 240])
 
         img = self.cmyk
-        print img.getMetadata()
-        #print img.filename
-        #print img.type, img.bpp, img.icc_cmyk, img
         arr = numpy.asarray(img)
-        print(arr)
+
+        # don't expect pure C, M, Y or KEY here as paper properties, coating,
+        # rendering intent, etc. are involved, too.
+        self.assertEqual(tuple(arr[0][0]), (178, 177, 155, 255))
+        self.assertEqual(tuple(arr[1][0]), (0, 0, 0, 0))
+        # M + Y = R
+        self.assertEqual(tuple(arr[3][0]), (0, 233, 223, 0))
+        # C + Y = G
+        self.assertEqual(tuple(arr[3][1]), (170, 0, 201, 0))
+        # M + Y = B
+        self.assertEqual(tuple(arr[3][2]), (246, 194, 1, 0))
+
+        self.assertEqual(tuple(arr[6][0]), (128, 0, 60, 0))
+        self.assertEqual(tuple(arr[6][1]), (72, 199, 0, 0))
+        self.assertEqual(tuple(arr[6][2]), (35, 0, 219, 0))
 
     def test_rawbytes(self):
         img = self.buffertest

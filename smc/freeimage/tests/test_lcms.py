@@ -23,7 +23,6 @@
 # THIS DISCLAIMER.
 #
 
-
 from __future__ import with_statement
 import os
 import tempfile
@@ -151,7 +150,7 @@ class TestLCMS(TestImageBase):
             'colorantTableOut': None,
             'colorimetricIntent': None,
             'connectionSpace': 'Lab ',
-            'copyright': 'Copyright by LOGO GmbH, Steinfurt',
+            'copyright': b'Copyright by LOGO GmbH, Steinfurt'.decode("utf-8"),
             'creationDate': datetime.datetime(2007, 5, 15, 14, 54, 48),
             'deviceClass': 'scnr',
             'greenColorant': ((0.435150146484375, 0.793792724609375, 0.0377044677734375),
@@ -166,7 +165,7 @@ class TestLCMS(TestImageBase):
             'headerManufacturer': None,
             'headerModel': None,
             'iccMeasurementCondition': None,
-            'iccVersion': '0x2400000',
+            'iccVersion': 0x2400000,
             'iccViewingCondition': None,
             'isCLUT': {0: (True, False, True),
                        1: (True, False, True),
@@ -196,7 +195,7 @@ class TestLCMS(TestImageBase):
             'mediaWhitePointTemperature': 5000.722328847392,
             'model': None,
             'perceptualRenderingIntentGamut': None,
-            'profileDescription': 'OS10000_A2_B5_mG',
+            'profileDescription': b'OS10000_A2_B5_mG'.decode("utf-8"),
             'profileid': b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
             'redColorant': ((0.4510650634765625, 0.1773834228515625, 0.0),
                             (0.7177438935560628, 0.2822561064439373, 0.1773834228515625)),

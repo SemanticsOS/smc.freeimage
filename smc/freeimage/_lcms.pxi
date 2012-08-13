@@ -392,7 +392,10 @@ cdef object int2ascii(unsigned int i):
     out[2] = < char > (i >> 8)
     out[3] = < char > i
     out[4] = 0
-    return out.decode("ascii")
+    if smc_fi.IS_PYTHON3:
+        return out.decode("ascii")
+    else:
+        return out
 
 cdef xyz_py(lcms.cmsCIEXYZ * XYZ):
     cdef lcms.cmsCIExyY xyY[1]
@@ -607,7 +610,7 @@ cdef class LCMSProfileInfo(object):
         self.info["attributes"] = int(attr)
         self.info["deviceClass"] = int2ascii(lcms.cmsGetDeviceClass(self.hProfile))
         self.info["version"] = lcms.cmsGetProfileVersion(self.hProfile)
-        self.info["iccVersion"] = hex(int(lcms.cmsGetEncodedICCversion(self.hProfile)))
+        self.info["iccVersion"] = int(lcms.cmsGetEncodedICCversion(self.hProfile))
         lcms.cmsGetHeaderProfileID(self.hProfile, hid)
         self.info["profileid"] = cpython.PyBytes_FromStringAndSize(< char *> hid, 16)
 

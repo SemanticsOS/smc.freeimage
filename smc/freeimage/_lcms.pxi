@@ -131,16 +131,16 @@ cdef class LCMSTransformation(object):
     cdef lcms.cmsHTRANSFORM hTransform
     cdef readonly bytes inprofile
     cdef readonly bytes outprofile
-    cdef readonly int format
-    cdef readonly int intent
+    cdef readonly unsigned int format
+    cdef readonly unsigned int intent
     cdef readonly unsigned long flags
     cdef hash
 
     def __init__(self,
                  bytes inprofile,
                  bytes outprofile=b"sRGB",
-                 int format=lcms.TYPE_BGR_8,
-                 int intent=lcms.INTENT_PERCEPTUAL,
+                 unsigned int format=lcms.TYPE_BGR_8,
+                 unsigned int intent=lcms.INTENT_PERCEPTUAL,
                  unsigned long flags=0
                  ):
         self.inprofile = inprofile
@@ -188,8 +188,8 @@ cdef class LCMSTransformation(object):
 
         return hProfile
 
-    cdef setTransform(self, int inputformat, int outputformat,
-                      int intent=lcms.INTENT_PERCEPTUAL,
+    cdef setTransform(self, unsigned int inputformat, unsigned int outputformat,
+                      unsigned int intent=lcms.INTENT_PERCEPTUAL,
                       unsigned long flags=0):
         if self.hInProfile == NULL:
             raise LCMSException("No in profile")
@@ -243,8 +243,8 @@ cdef class LCMSIccCache(object):
     cdef addEntry(self,
                   bytes inprofile,
                   bytes outprofile,
-                  int format,
-                  int intent,
+                  unsigned int format,
+                  unsigned int intent,
                   unsigned long flags):
         trafo = LCMSTransformation(inprofile, outprofile, format, intent, flags)
         self._cache[(inprofile, outprofile, format, intent, flags)] = trafo
@@ -266,8 +266,8 @@ cdef class LCMSIccCache(object):
     def lookupByImage(self,
                       Image img,
                       bytes outprofile,
-                      int format,
-                      int intent,
+                      unsigned int format,
+                      unsigned int intent,
                       unsigned long flags):
         cdef bytes inprofile
 
@@ -282,8 +282,8 @@ cdef class LCMSIccCache(object):
     def lookup(self,
                bytes inprofile,
                bytes outprofile,
-               int format,
-               int intent,
+               unsigned int format,
+               unsigned int intent,
                unsigned long flags):
         trafo = self._cache.get((inprofile, outprofile, format, intent, flags))
         if trafo is None:
@@ -294,7 +294,7 @@ cdef class LCMSIccCache(object):
               Image img,
               bytes inprofile=None,
               bytes outprofile=b"sRGB",
-              int intent=lcms.INTENT_PERCEPTUAL,
+              unsigned int intent=lcms.INTENT_PERCEPTUAL,
               unsigned long flags=0):
 
         cdef fi.FIBITMAP * dib

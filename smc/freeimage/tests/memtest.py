@@ -11,13 +11,13 @@
 # Purpose     : memory load tester
 #=============================================================================
 #
-# COVERED CODE IS PROVIDED UNDER THIS LICENSE ON AN "AS IS" BASIS, WITHOUT 
-# WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, WITHOUT 
+# COVERED CODE IS PROVIDED UNDER THIS LICENSE ON AN "AS IS" BASIS, WITHOUT
+# WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, WITHOUT
 # LIMITATION, WARRANTIES THAT THE COVERED CODE IS FREE OF DEFECTS, MERCHANTABLE,
 # FIT FOR A PARTICULAR PURPOSE OR NON-INFRINGING. THE ENTIRE RISK AS TO THE
 # QUALITY AND PERFORMANCE OF THE COVERED CODE IS WITH YOU. SHOULD ANY COVERED
-# CODE PROVE DEFECTIVE IN ANY RESPECT, YOU (NOT THE INITIAL DEVELOPER OR ANY 
-# OTHER CONTRIBUTOR) ASSUME THE COST OF ANY NECESSARY SERVICING, REPAIR OR 
+# CODE PROVE DEFECTIVE IN ANY RESPECT, YOU (NOT THE INITIAL DEVELOPER OR ANY
+# OTHER CONTRIBUTOR) ASSUME THE COST OF ANY NECESSARY SERVICING, REPAIR OR
 # CORRECTION. THIS DISCLAIMER OF WARRANTY CONSTITUTES AN ESSENTIAL PART OF
 # THIS LICENSE. NO USE OF ANY COVERED CODE IS AUTHORIZED HEREUNDER EXCEPT UNDER
 # THIS DISCLAIMER.
@@ -32,15 +32,14 @@ import tempfile
 import shutil
 import gc
 
-from smc.freeimage import *
-from smc.freeimage import ficonstants as fi
+from smc.freeimage import Image
 from smc.freeimage.tests import test_main
-
-from smc.freeimage.tests.common import IMG, TIFF, TIFF2, BITON
+from smc.freeimage.tests.common import IMG
 
 if sys.platform == "win32": # pragma: no cover
     import win32process
     import win32api
+
 
 def proc_status():
     info = {}
@@ -61,6 +60,7 @@ def proc_status():
             info[key.strip()] = value
     return info
 
+
 def win32_status(): # pragma: no cover
     info = {}
     hProcess = win32api.GetCurrentProcess()
@@ -71,6 +71,7 @@ def win32_status(): # pragma: no cover
             value = value / (1024.0 ** 2)
         info[key] = value
     return info
+
 
 class LoadTest(object):
     def __init__(self, func, *args, **kwargs):
@@ -92,7 +93,8 @@ class LoadTest(object):
             gc.collect()
             info = win32_status()
             info.update(round=round, fi=sys.getrefcount(Image))
-            print("%(round)i: peak %(PeakWorkingSetSize)0.3f, working %(WorkingSetSize)0.3f, image ref %(fi)i" % info)
+            print("%(round)i: peak %(PeakWorkingSetSize)0.3f, working "
+                  "%(WorkingSetSize)0.3f, image ref %(fi)i" % info)
 
     else:
         @classmethod
@@ -100,8 +102,8 @@ class LoadTest(object):
             gc.collect()
             info = proc_status()
             info.update(round=round, fi=sys.getrefcount(Image))
-            print("%(round)i: virtual %(VmSize)0.3f, resident %(VmRSS)0.3f, image ref %(fi)i" % info)
-
+            print("%(round)i: virtual %(VmSize)0.3f, resident %(VmRSS)0.3f, "
+                  "image ref %(fi)i" % info)
 
     def __call__(self, rounds=100, log=5):
         self.setUp()
@@ -112,6 +114,7 @@ class LoadTest(object):
                 self.func(*self.args, **self.kwargs)
         finally:
             self.tearDown()
+
 
 def rotateex():
     def func():
@@ -125,6 +128,7 @@ def rotateex():
     loadtest = LoadTest(func)
     loadtest.tmpdir = tempfile.mkdtemp()
     loadtest(rounds=50, log=1)
+
 
 def cycle_test(rounds=50):
     suite = test_main()

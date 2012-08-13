@@ -29,7 +29,7 @@ import os
 import tempfile
 import datetime
 #from time import time
-from pprint import pprint
+#from pprint import pprint
 
 from smc.freeimage import (LCMSTransformation, LCMSIccCache, LCMSProfileInfo,
                            getLCMSVersion)

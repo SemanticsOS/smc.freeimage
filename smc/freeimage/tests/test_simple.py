@@ -11,29 +11,25 @@
 # Purpose     : unit tests for simple and misc code
 #=============================================================================
 #
-# COVERED CODE IS PROVIDED UNDER THIS LICENSE ON AN "AS IS" BASIS, WITHOUT 
-# WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, WITHOUT 
+# COVERED CODE IS PROVIDED UNDER THIS LICENSE ON AN "AS IS" BASIS, WITHOUT
+# WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, WITHOUT
 # LIMITATION, WARRANTIES THAT THE COVERED CODE IS FREE OF DEFECTS, MERCHANTABLE,
 # FIT FOR A PARTICULAR PURPOSE OR NON-INFRINGING. THE ENTIRE RISK AS TO THE
 # QUALITY AND PERFORMANCE OF THE COVERED CODE IS WITH YOU. SHOULD ANY COVERED
-# CODE PROVE DEFECTIVE IN ANY RESPECT, YOU (NOT THE INITIAL DEVELOPER OR ANY 
-# OTHER CONTRIBUTOR) ASSUME THE COST OF ANY NECESSARY SERVICING, REPAIR OR 
+# CODE PROVE DEFECTIVE IN ANY RESPECT, YOU (NOT THE INITIAL DEVELOPER OR ANY
+# OTHER CONTRIBUTOR) ASSUME THE COST OF ANY NECESSARY SERVICING, REPAIR OR
 # CORRECTION. THIS DISCLAIMER OF WARRANTY CONSTITUTES AN ESSENTIAL PART OF
 # THIS LICENSE. NO USE OF ANY COVERED CODE IS AUTHORIZED HEREUNDER EXCEPT UNDER
 # THIS DISCLAIMER.
 #
-try:
-    import unittest2
-except ImportError:
-    import unittest as unittest2
 
 import sys
 from smc import freeimage
 from smc.freeimage import FormatInfo, OperationError
 from smc.freeimage import ficonstants as fi
-from smc.freeimage import enums
 from smc.freeimage.tests.test_image import IMG
-from smc.freeimage.tests.common import owner
+from smc.freeimage.tests.common import owner, unittest2
+
 
 class SimpleStuff(unittest2.TestCase):
     @owner("c.heimes")
@@ -134,7 +130,6 @@ class SimpleStuff(unittest2.TestCase):
 
         formats = list(FormatInfo.list())
         self.assertEqual(len(formats), 35)
-
 
     @owner("c.heimes")
     def test_getFormatCount(self):

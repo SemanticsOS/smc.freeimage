@@ -12,13 +12,13 @@
 # Purpose     : distutils setup routines
 #=============================================================================
 #
-# COVERED CODE IS PROVIDED UNDER THIS LICENSE ON AN "AS IS" BASIS, WITHOUT 
-# WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, WITHOUT 
+# COVERED CODE IS PROVIDED UNDER THIS LICENSE ON AN "AS IS" BASIS, WITHOUT
+# WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, WITHOUT
 # LIMITATION, WARRANTIES THAT THE COVERED CODE IS FREE OF DEFECTS, MERCHANTABLE,
 # FIT FOR A PARTICULAR PURPOSE OR NON-INFRINGING. THE ENTIRE RISK AS TO THE
 # QUALITY AND PERFORMANCE OF THE COVERED CODE IS WITH YOU. SHOULD ANY COVERED
-# CODE PROVE DEFECTIVE IN ANY RESPECT, YOU (NOT THE INITIAL DEVELOPER OR ANY 
-# OTHER CONTRIBUTOR) ASSUME THE COST OF ANY NECESSARY SERVICING, REPAIR OR 
+# CODE PROVE DEFECTIVE IN ANY RESPECT, YOU (NOT THE INITIAL DEVELOPER OR ANY
+# OTHER CONTRIBUTOR) ASSUME THE COST OF ANY NECESSARY SERVICING, REPAIR OR
 # CORRECTION. THIS DISCLAIMER OF WARRANTY CONSTITUTES AN ESSENTIAL PART OF
 # THIS LICENSE. NO USE OF ANY COVERED CODE IS AUTHORIZED HEREUNDER EXCEPT UNDER
 # THIS DISCLAIMER.
@@ -93,8 +93,7 @@ fi_ext_extras = dict(
              "smc/freeimage/_lcms.pxi",
              "smc/freeimage/lcms.pxd",
              "smc/freeimage/smc_fi.pxd",
-             "smc/freeimage/smc_fi.h"],
-    )
+             "smc/freeimage/smc_fi.h"])
 fi_ext_extra_objects = []
 
 
@@ -191,8 +190,7 @@ setup_info = dict(
         Extension("smc.freeimage.ficonstants", ["smc/freeimage/ficonstants.c"],
                   **fi_ext_extras),
         Extension("smc.freeimage.lcmsconstants", ["smc/freeimage/lcmsconstants.c"],
-                  **fi_ext_extras)
-        ],
+                  **fi_ext_extras)],
     setup_requires=["setuptools>=0.6c11", "Cython>=0.16"],
     packages=["smc.freeimage"],
     namespace_packages=["smc"],
@@ -247,4 +245,3 @@ setup(**setup_info)
 #if IS_WINDOWS:
 #    os.unlink("smc/freeimage/%s" % fidll)
 #    os.unlink("smc/freeimage/lcms2.dll")
-

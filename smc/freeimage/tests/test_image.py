@@ -11,35 +11,29 @@
 # Purpose     : image unit tests
 #=============================================================================
 #
-# COVERED CODE IS PROVIDED UNDER THIS LICENSE ON AN "AS IS" BASIS, WITHOUT 
-# WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, WITHOUT 
+# COVERED CODE IS PROVIDED UNDER THIS LICENSE ON AN "AS IS" BASIS, WITHOUT
+# WARRANTY OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, WITHOUT
 # LIMITATION, WARRANTIES THAT THE COVERED CODE IS FREE OF DEFECTS, MERCHANTABLE,
 # FIT FOR A PARTICULAR PURPOSE OR NON-INFRINGING. THE ENTIRE RISK AS TO THE
 # QUALITY AND PERFORMANCE OF THE COVERED CODE IS WITH YOU. SHOULD ANY COVERED
-# CODE PROVE DEFECTIVE IN ANY RESPECT, YOU (NOT THE INITIAL DEVELOPER OR ANY 
-# OTHER CONTRIBUTOR) ASSUME THE COST OF ANY NECESSARY SERVICING, REPAIR OR 
+# CODE PROVE DEFECTIVE IN ANY RESPECT, YOU (NOT THE INITIAL DEVELOPER OR ANY
+# OTHER CONTRIBUTOR) ASSUME THE COST OF ANY NECESSARY SERVICING, REPAIR OR
 # CORRECTION. THIS DISCLAIMER OF WARRANTY CONSTITUTES AN ESSENTIAL PART OF
 # THIS LICENSE. NO USE OF ANY COVERED CODE IS AUTHORIZED HEREUNDER EXCEPT UNDER
 # THIS DISCLAIMER.
 #
 
-#@PydevCodeAnalysisIgnoreICC
-from __future__ import with_statement
 import os
 import sys
-try:
-    import unittest2
-except ImportError:
-    import unittest as unittest2
-
 import tempfile
 import shutil
-import time
-from pprint import pprint
 
-from smc.freeimage import *
+from smc.freeimage import (Image, Multipage, UnknownImageError, OperationError,
+                           jpegTransform, hasJPEGTurbo, getColorOrder)
+from smc.freeimage import (CONSTANTS, FI_FORMAT, FI_COLOR_TYPE, FI_TYPE,
+                           FI_FILTER, FI_JPEG_OPERATION)
 from smc.freeimage import ficonstants as fi
-from smc.freeimage.tests.common import owner
+from smc.freeimage.tests.common import owner, unittest2
 from smc.freeimage.tests.common import IMG, TIFF, TIFF2, BITON, MULTIPAGE, BUFFERTEST, CMYK
 
 try:
@@ -132,7 +126,7 @@ class TestImageBase(unittest2.TestCase):
         self.assertEqual(img.dpm_x, 11811)
         self.assertEqual(img.dpm_y, 11811)
         self.assertEqual(img.dpm, (11811, 11811))
-        self.assertEqual(img.icc_cmyk, None)
+        self.assertEqual(img.icc_cmyk, False)
         self.assertEqual(img.has_icc, False)
         self.assertEqual(img.colors_used, 0)
         self.assertEqual(img.color_type, FI_COLOR_TYPE.FIC_RGB)
@@ -186,13 +180,6 @@ class TestImage(TestImageBase):
             self.assertFalse(img.has_pixels)
         with Image(IMG, flags=FI_FORMAT.FIF_LOAD_NOPIXELS) as img:
             self.assertFalse(img.has_pixels)
-
-    @owner("c.heimes")
-    def test_tiff(self):
-        img = self.tiff
-        self.assertEqual(img.format, FI_FORMAT.FIF_TIFF)
-        self.assertEqual(img.size, (1136, 1618))
-
 
     @owner("c.heimes")
     def test_close(self):
@@ -263,7 +250,6 @@ class TestImage(TestImageBase):
                 img.save("test_%s.jpg" % name, FI_FORMAT.FIF_JPEG)
                 img.close()
 
-
     @owner("c.heimes")
     def test_resize(self):
         img = self.img
@@ -295,7 +281,7 @@ class TestImage(TestImageBase):
         self.failUnlessEqual(os.path.getsize(no_ext_file),
                              os.path.getsize(png_file))
 
-        #test flag parameter 
+        #test flag parameter
         previous_size = os.path.getsize(jpg_file)
         # only 50% jpeg quality
         img.save(jpg_file, format=FI_FORMAT.FIF_JPEG,
@@ -400,7 +386,7 @@ class TestImage(TestImageBase):
     @owner("c.heimes")
     def test_rotate_ex(self):
         with self.img.rotateEx(30.0, 5, 5, 10, 10) as img:
-            pass
+            img
 
     @owner("c.heimes")
     def test_jpegtransform(self):
@@ -414,7 +400,7 @@ class TestImage(TestImageBase):
                }
         for dst, (op, w, h) in map.items():
             fname = os.path.join(self.tmpdir, dst)
-            jpegTransform(IMG, fname , op)
+            jpegTransform(IMG, fname, op)
             self.assert_(os.path.isfile(fname))
             img = Image(fname)
             #self.assertEqual(img.size, (w, h))
@@ -596,7 +582,7 @@ class TestImageNewBuffer(TestImageBase):
         data = img.getRaw()
         pimg = PilImage.fromstring("RGB", img.size, data,
                                    "raw", getColorOrder(), img.pitch, -1)
-        #pimg.show()
+        self.assertEqual(pimg.size, img.size)
 
 
 class TestMultiPage(TestImageBase):
@@ -640,20 +626,20 @@ class TestMetadata(TestImageBase):
         count = img.getMetadataCount()
         for k, v in kw.items():
             count.setdefault(k, 0) + len(v)
-        self.assertEqual(count,
-            {'FIMD_EXIF_MAIN': 0,
-             'FIMD_EXIF_EXIF': 0,
-             'FIMD_EXIF_INTEROP': 0,
-             'FIMD_GEOTIFF': 0,
-             'FIMD_COMMENTS': 0,
-             'FIMD_IPTC': 0,
-             'FIMD_XMP': 0,
-             'FIMD_NODATA': 0,
-             'FIMD_EXIF_MAKERNOTE': 0,
-             'FIMD_ANIMATION': 0,
-             'FIMD_CUSTOM': 0,
-             'FIMD_EXIF_GPS': 0}
-            )
+        self.assertEqual(count, {
+            'FIMD_EXIF_MAIN': 0,
+            'FIMD_EXIF_EXIF': 0,
+            'FIMD_EXIF_INTEROP': 0,
+            'FIMD_GEOTIFF': 0,
+            'FIMD_COMMENTS': 0,
+            'FIMD_IPTC': 0,
+            'FIMD_XMP': 0,
+            'FIMD_NODATA': 0,
+            'FIMD_EXIF_MAKERNOTE': 0,
+            'FIMD_ANIMATION': 0,
+            'FIMD_CUSTOM': 0,
+            'FIMD_EXIF_GPS': 0}
+        )
 
     def _check_metadata_tiff(self, tiff, **kw):
         meta = tiff.getMetadata()
@@ -664,31 +650,29 @@ class TestMetadata(TestImageBase):
                 else:
                     meta[k][k2] = v2
 
-        self.assertEqual(meta,
-            {'FIMD_EXIF_MAIN':
-                {'Software': ('ImageGear Version:  13.05.001', 'Software used'),
-                 'InterColorProfile': ('', None),
-                 'DateTime': ('2007:07:23 14:19:45', 'File change date and time'),
-                 'Artist': ('Zeutschel Omniscan 11', 'Person who created the image'),
-                 'BitsPerSample': ('8', 'Number of bits per component'),
-                 'Compression': ('LZW (5)', 'Compression scheme'),
-                 'FillOrder': ('1', None),
-                 'ImageLength': ('1618', 'Image height'),
-                 'ImageWidth': ('1136', 'Image width'),
-                 'InterColorProfile': ('', None),
-                 #'Orientation': ('top, left side', 'Orientation of image'),
-                 'PhotometricInterpretation': ('2', 'Pixel composition'),
-                 'PlanarConfiguration': ('1', 'Image data arrangement'),
-                 'ResolutionUnit': ('inches', 'Unit of X and Y resolution'),
-                 'RowsPerStrip': ('2', 'Number of rows per strip'),
-                 'SamplesPerPixel': ('3', 'Number of components'),
-                 'StripByteCounts': ('6697', 'Bytes per compressed strip'),
-                 'StripOffsets': ('8', 'Image data location'),
-                 'XResolution': ('300', 'Image resolution in width direction'),
-                 'YResolution': ('300', 'Image resolution in height direction'),
-                 }
-            }
-            )
+        self.assertEqual(meta, {
+            'FIMD_EXIF_MAIN': {
+                'Software': ('ImageGear Version:  13.05.001', 'Software used'),
+                'InterColorProfile': ('', None),
+                'DateTime': ('2007:07:23 14:19:45', 'File change date and time'),
+                'Artist': ('Zeutschel Omniscan 11', 'Person who created the image'),
+                'BitsPerSample': ('8', 'Number of bits per component'),
+                'Compression': ('LZW (5)', 'Compression scheme'),
+                'FillOrder': ('1', None),
+                'ImageLength': ('1618', 'Image height'),
+                'ImageWidth': ('1136', 'Image width'),
+                'InterColorProfile': ('', None),
+                #'Orientation': ('top, left side', 'Orientation of image'),
+                'PhotometricInterpretation': ('2', 'Pixel composition'),
+                'PlanarConfiguration': ('1', 'Image data arrangement'),
+                'ResolutionUnit': ('inches', 'Unit of X and Y resolution'),
+                'RowsPerStrip': ('2', 'Number of rows per strip'),
+                'SamplesPerPixel': ('3', 'Number of components'),
+                'StripByteCounts': ('6697', 'Bytes per compressed strip'),
+                'StripOffsets': ('8', 'Image data location'),
+                'XResolution': ('300', 'Image resolution in width direction'),
+                'YResolution': ('300', 'Image resolution in height direction')}}
+        )
 
         meta = tiff.getMetadata(binary=True)
         for k, v in kw.items():
@@ -698,31 +682,29 @@ class TestMetadata(TestImageBase):
                 else:
                     meta[k][k2] = v2[0].encode("utf-8"), v2[1]
 
-        self.assertEqual(meta,
-            {'FIMD_EXIF_MAIN':
-                {'Software': (b'ImageGear Version:  13.05.001', 'Software used'),
-                 'InterColorProfile': (b'', None),
-                 'DateTime': (b'2007:07:23 14:19:45', 'File change date and time'),
-                 'Artist': (b'Zeutschel Omniscan 11', 'Person who created the image'),
-                 'BitsPerSample': (b'8', 'Number of bits per component'),
-                 'Compression': (b'LZW (5)', 'Compression scheme'),
-                 'FillOrder': (b'1', None),
-                 'ImageLength': (b'1618', 'Image height'),
-                 'ImageWidth': (b'1136', 'Image width'),
-                 'InterColorProfile': (b'', None),
-                 #'Orientation': ('top, left side', 'Orientation of image'),
-                 'PhotometricInterpretation': (b'2', 'Pixel composition'),
-                 'PlanarConfiguration': (b'1', 'Image data arrangement'),
-                 'ResolutionUnit': (b'inches', 'Unit of X and Y resolution'),
-                 'RowsPerStrip': (b'2', 'Number of rows per strip'),
-                 'SamplesPerPixel': (b'3', 'Number of components'),
-                 'StripByteCounts': (b'6697', 'Bytes per compressed strip'),
-                 'StripOffsets': (b'8', 'Image data location'),
-                 'XResolution': (b'300', 'Image resolution in width direction'),
-                 'YResolution': (b'300', 'Image resolution in height direction'),
-                 }
-            }
-            )
+        self.assertEqual(meta, {
+            'FIMD_EXIF_MAIN': {
+                'Software': (b'ImageGear Version:  13.05.001', 'Software used'),
+                'InterColorProfile': (b'', None),
+                'DateTime': (b'2007:07:23 14:19:45', 'File change date and time'),
+                'Artist': (b'Zeutschel Omniscan 11', 'Person who created the image'),
+                'BitsPerSample': (b'8', 'Number of bits per component'),
+                'Compression': (b'LZW (5)', 'Compression scheme'),
+                'FillOrder': (b'1', None),
+                'ImageLength': (b'1618', 'Image height'),
+                'ImageWidth': (b'1136', 'Image width'),
+                'InterColorProfile': (b'', None),
+                #'Orientation': ('top, left side', 'Orientation of image'),
+                'PhotometricInterpretation': (b'2', 'Pixel composition'),
+                'PlanarConfiguration': (b'1', 'Image data arrangement'),
+                'ResolutionUnit': (b'inches', 'Unit of X and Y resolution'),
+                'RowsPerStrip': (b'2', 'Number of rows per strip'),
+                'SamplesPerPixel': (b'3', 'Number of components'),
+                'StripByteCounts': (b'6697', 'Bytes per compressed strip'),
+                'StripOffsets': (b'8', 'Image data location'),
+                'XResolution': (b'300', 'Image resolution in width direction'),
+                'YResolution': (b'300', 'Image resolution in height direction')}}
+        )
 
         count = tiff.getMetadataCount()
         for k, v in kw.items():
@@ -730,20 +712,20 @@ class TestMetadata(TestImageBase):
                 if v2 is None:
                     count[k] -= 1
 
-        self.assertEqual(count,
-            {'FIMD_EXIF_MAIN': 18,
-             'FIMD_EXIF_EXIF': 0,
-             'FIMD_EXIF_INTEROP': 0,
-             'FIMD_GEOTIFF': 0,
-             'FIMD_COMMENTS': 0,
-             'FIMD_IPTC': 0,
-             'FIMD_XMP': 0,
-             'FIMD_NODATA': 0,
-             'FIMD_EXIF_MAKERNOTE': 0,
-             'FIMD_ANIMATION': 0,
-             'FIMD_CUSTOM': 0,
-             'FIMD_EXIF_GPS': 0 }
-            )
+        self.assertEqual(count, {
+            'FIMD_EXIF_MAIN': 18,
+            'FIMD_EXIF_EXIF': 0,
+            'FIMD_EXIF_INTEROP': 0,
+            'FIMD_GEOTIFF': 0,
+            'FIMD_COMMENTS': 0,
+            'FIMD_IPTC': 0,
+            'FIMD_XMP': 0,
+            'FIMD_NODATA': 0,
+            'FIMD_EXIF_MAKERNOTE': 0,
+            'FIMD_ANIMATION': 0,
+            'FIMD_CUSTOM': 0,
+            'FIMD_EXIF_GPS': 0}
+        )
 
     def _check_metadata_tiff2(self, tiff2, **kw):
         meta = tiff2.getMetadata()
@@ -754,38 +736,37 @@ class TestMetadata(TestImageBase):
                 else:
                     meta[k][k2] = v2
 
-        self.assertEqual(meta,
-            {'FIMD_EXIF_MAIN':
-                {'Artist': ('ULB HALLE - MUB',
-                            'Person who created the image'),
-                 'BitsPerSample': ('8', 'Number of bits per component'),
-                 'Compression': ('dump mode (1)', 'Compression scheme'),
-                 'DateTime': ('2007:08:23 07:46:26',
-                              'File change date and time'),
-                 'DocumentName': ('1-000360E', None),
-                 'FillOrder': ('1', None),
-                 'ImageLength': ('2501', 'Image height'),
-                 'ImageWidth': ('1972', 'Image width'),
-                 'InterColorProfile': ('', None),
-                 #'Orientation': ('top, left side', 'Orientation of image'),
-                 'PageName': ('1-000360E_0003_T_8\\1-000360E_00004_T_14.tif',
-                              'Name of the page'),
-                 'PhotometricInterpretation': ('2', 'Pixel composition'),
-                 'PlanarConfiguration': ('1', 'Image data arrangement'),
-                 'ResolutionUnit': ('inches',
-                                    'Unit of X and Y resolution'),
-                 'RowsPerStrip': ('1', 'Number of rows per strip'),
-                 'SamplesPerPixel': ('3', 'Number of components'),
-                 'Software': ('MUB - Zeutschel OS 11.8, Scanner 2',
-                              'Software used'),
-                 'StripByteCounts': ('5916', 'Bytes per compressed strip'),
-                 'StripOffsets': ('8', 'Image data location'),
-                 'XResolution': ('300',
-                                 'Image resolution in width direction'),
-                 'YResolution': ('300',
-                                 'Image resolution in height direction')
-                 }}
-            )
+        self.assertEqual(meta, {
+            'FIMD_EXIF_MAIN': {
+                'Artist': ('ULB HALLE - MUB',
+                           'Person who created the image'),
+                'BitsPerSample': ('8', 'Number of bits per component'),
+                'Compression': ('dump mode (1)', 'Compression scheme'),
+                'DateTime': ('2007:08:23 07:46:26',
+                             'File change date and time'),
+                'DocumentName': ('1-000360E', None),
+                'FillOrder': ('1', None),
+                'ImageLength': ('2501', 'Image height'),
+                'ImageWidth': ('1972', 'Image width'),
+                'InterColorProfile': ('', None),
+                #'Orientation': ('top, left side', 'Orientation of image'),
+                'PageName': ('1-000360E_0003_T_8\\1-000360E_00004_T_14.tif',
+                             'Name of the page'),
+                'PhotometricInterpretation': ('2', 'Pixel composition'),
+                'PlanarConfiguration': ('1', 'Image data arrangement'),
+                'ResolutionUnit': ('inches',
+                                   'Unit of X and Y resolution'),
+                'RowsPerStrip': ('1', 'Number of rows per strip'),
+                'SamplesPerPixel': ('3', 'Number of components'),
+                'Software': ('MUB - Zeutschel OS 11.8, Scanner 2',
+                             'Software used'),
+                'StripByteCounts': ('5916', 'Bytes per compressed strip'),
+                'StripOffsets': ('8', 'Image data location'),
+                'XResolution': ('300',
+                                'Image resolution in width direction'),
+                'YResolution': ('300',
+                                'Image resolution in height direction')}}
+        )
 
         count = tiff2.getMetadataCount()
         for k, v in kw.items():
@@ -793,20 +774,20 @@ class TestMetadata(TestImageBase):
                 if v2 is None:
                     count[k] -= 1
 
-        self.assertEqual(count,
-            {'FIMD_EXIF_MAIN': 20,
-             'FIMD_EXIF_EXIF': 0,
-             'FIMD_EXIF_INTEROP': 0,
-             'FIMD_GEOTIFF': 0,
-             'FIMD_COMMENTS': 0,
-             'FIMD_IPTC': 0,
-             'FIMD_XMP': 0,
-             'FIMD_NODATA': 0,
-             'FIMD_EXIF_MAKERNOTE': 0,
-             'FIMD_ANIMATION': 0,
-             'FIMD_CUSTOM': 0,
-             'FIMD_EXIF_GPS': 0}
-            )
+        self.assertEqual(count, {
+            'FIMD_EXIF_MAIN': 20,
+            'FIMD_EXIF_EXIF': 0,
+            'FIMD_EXIF_INTEROP': 0,
+            'FIMD_GEOTIFF': 0,
+            'FIMD_COMMENTS': 0,
+            'FIMD_IPTC': 0,
+            'FIMD_XMP': 0,
+            'FIMD_NODATA': 0,
+            'FIMD_EXIF_MAKERNOTE': 0,
+            'FIMD_ANIMATION': 0,
+            'FIMD_CUSTOM': 0,
+            'FIMD_EXIF_GPS': 0}
+        )
 
     @owner("c.heimes")
     def test_metadata(self):
@@ -825,16 +806,13 @@ class TestMetadata(TestImageBase):
             filename = os.path.join(self.tmpdir, os.path.basename(img.filename))
             if imgname == "tiff":
                 flags = fi.TIFF_LZW
-                update = {'FIMD_EXIF_MAIN':
-                               # FreeImage adds an orientation field, ignore it
-                              {'Orientation': None,
-                               'StripByteCounts': ('6697', 'Bytes per compressed strip')
-                          }}
+                # FreeImage adds an orientation field, ignore it
+                update = {'FIMD_EXIF_MAIN': {'Orientation': None,
+                                             'StripByteCounts': ('6697',
+                                                                 'Bytes per compressed strip')}}
             elif imgname == "tiff2":
                 flags = fi.TIFF_NONE
-                update = {'FIMD_EXIF_MAIN':
-                              {'Orientation': None,
-                          }}
+                update = {'FIMD_EXIF_MAIN': {'Orientation': None}}
             else:
                 flags = 0
                 update = {}
@@ -845,10 +823,10 @@ class TestMetadata(TestImageBase):
     @owner("c.heimes")
     def test_header(self):
         header = self.tiff.getInfoHeader()
-        self.assertEqual(repr(header),
-            '<BitmapInfo size=40, width=1136, height=1618, planes=1, bit_count=24, '
-            'compression=0, size_image=0, xppm=11811, yppm=11811, colors_used=0, '
-            'colors_important=0>')
+        self.assertEqual(repr(header), '<BitmapInfo size=40, width=1136, height=1618, '
+                                       'planes=1, bit_count=24, compression=0, '
+                                       'size_image=0, xppm=11811, yppm=11811, '
+                                       'colors_used=0, colors_important=0>')
 
     @owner("c.heimes")
     def test_icc(self):
@@ -880,7 +858,7 @@ class TestMetadata(TestImageBase):
         self.assertEqual(sum(count.values()), 18, count)
 
         # round trip doesn't work because libtiff can't write all EXIF data yet (as of 3.14.1)
-        # check save/load roundtrip       
+        # check save/load roundtrip
         #self.tmpdir = tempfile.mkdtemp()
         #fname = os.path.join(self.tmpdir, "clone.tiff")
         #clone.save(fname)
@@ -900,6 +878,7 @@ def test_main():
         suite.addTest(unittest2.defaultTestLoader.loadTestsFromTestCase(TestImageOldBuffer))
     suite.addTest(unittest2.defaultTestLoader.loadTestsFromTestCase(TestImageNewBuffer))
     return suite
+
 
 def test_memory():
     import psutil

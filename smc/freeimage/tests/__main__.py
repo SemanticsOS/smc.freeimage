@@ -10,11 +10,8 @@
 # Revision    : $Rev$
 # Purpose     : unit tests
 #=============================================================================
-try:
-    import unittest2
-except ImportError:
-    import unittest as unittest2
 
+from smc.freeimage.tests.common import unittest2
 from smc.freeimage.tests import test_main
 
 if __name__ == "__main__": # pragma: no cover

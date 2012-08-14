@@ -9,8 +9,8 @@ Features of FreeImage
 =====================
 
 FreeImage wraps mature and widely-used libraries like LibJPEG, LibOpenJPEG,
-LibPNG, LibRaw, LibTIFF4, OpenEXR and zlib in a consistent and powerful set
-of APIs.
+LibPNG, LibRaw, LibTIFF4, OpenEXR and zlib in a consistent, well documented
+and powerful API.
 
 http://freeimage.sourceforge.net/
 
@@ -56,16 +56,16 @@ framework.
  * mostly written with Cython with some lines of handwritten C Code and some
    Python helpers.
 
- * fast. It avoids copying large amounts of data and releases the GIL whenever
+ * fast, it avoids copying large amounts of data and releases the GIL whenever
    possible.
 
  * 64bit safe, tested on i386/X86 and AMD64/X86_64 systems
 
  * thread safe
 
- * Wraps a large subset of FreeImage features
+ * wraps a large subset of FreeImage features
 
- * Compatible with Python 2.6 to 3.3.
+ * compatible with Python 2.6 to 3.3.
 
 
 Performance
@@ -155,6 +155,8 @@ Cons of smc.freeimage
 ----------------------
 
  * Few image filters, no support for complex image filters in FreeImage
+
+ * Low quality resize filters are slower than PIL's filters
 
  * No drawing API for primitives (lines, circles, boxes)
 

@@ -65,6 +65,8 @@ framework.
 
  * Wraps a large subset of FreeImage features
 
+ * Compatible with Python 2.6 to 3.3.
+
 
 Performance
 ===========
@@ -126,7 +128,7 @@ Pros of smc.freeimage
    copy design.
 
  * Modern file formats! smc.freeimage supports JPEG 2000, HDR and EXR high
-   dynamic range images, raw camera data (RAW).
+   dynamic range images and raw camera data (RAW).
 
  * Full baseline TIFF support! Contrary to PIL smc.freeimage supports all
    flavors of baseline TIFF like G3 and G4 compression and multipage TIFFs.
@@ -135,7 +137,7 @@ Pros of smc.freeimage
    buffer.
 
  * Correct and optimized integration of a color management system (LittleCMS2)
-   instead of broken lcms1 integration including caching of optimized
+   instead of lcms1 integration including caching of optimized
    transformations, in-place transformation and introspection of profiles.
 
  * Structured metadata access to EXIF, XMP and IPTC information, also supports

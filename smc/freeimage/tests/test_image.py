@@ -35,7 +35,7 @@ from smc.freeimage import (CONSTANTS, FI_FORMAT, FI_COLOR_TYPE, FI_TYPE,
                            FI_FILTER, FI_JPEG_OPERATION)
 from smc.freeimage import ficonstants as fi
 from smc.freeimage import lcmsconstants as lcms
-from smc.freeimage.tests.common import owner, unittest2
+from smc.freeimage.tests.common import owner, unittest2, run_tests
 from smc.freeimage.tests.common import IMG, TIFF, TIFF2, BITON, MULTIPAGE, BUFFERTEST, CMYK
 
 try:
@@ -921,4 +921,4 @@ if __name__ == "__main__": # pragma: no cover
     suite.addTest(TestImage("test_daterepresentation"))
     #suite.addTest(TestMetadata("test_metadata"))
     #suite = test_main()
-    unittest2.TextTestRunner(verbosity=2).run(suite)
+    run_tests(suite)

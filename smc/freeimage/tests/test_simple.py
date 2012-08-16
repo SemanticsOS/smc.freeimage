@@ -28,7 +28,7 @@ from smc import freeimage
 from smc.freeimage import FormatInfo, OperationError
 from smc.freeimage import ficonstants as fi
 from smc.freeimage.tests.test_image import IMG
-from smc.freeimage.tests.common import owner, unittest2, PY3
+from smc.freeimage.tests.common import owner, unittest2, run_tests, PY3
 
 
 class SimpleStuff(unittest2.TestCase):
@@ -169,4 +169,4 @@ def test_main():
     return suite
 
 if __name__ == "__main__": # pragma: no cover
-    unittest2.TextTestRunner(verbosity=2).run(test_main())
+    run_tests(test_main())

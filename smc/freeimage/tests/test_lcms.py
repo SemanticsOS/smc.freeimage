@@ -34,7 +34,7 @@ from smc.freeimage import (LCMSTransformation, LCMSIccCache, LCMSProfileInfo,
                            getLCMSVersion)
 from smc.freeimage import lcmsconstants as lcms
 from smc.freeimage.tests.test_image import TestImageBase
-from smc.freeimage.tests.common import owner, ICMS, unittest2
+from smc.freeimage.tests.common import owner, ICMS, unittest2, run_tests
 
 
 class TestLCMS(TestImageBase):
@@ -227,4 +227,4 @@ if __name__ == "__main__": # pragma: no cover
     suite = unittest2.TestSuite()
     #suite.addTest(TestLCMS("test_lcmsIccCache"))
     suite.addTest(TestLCMS("test_lcmsProfileInfo"))
-    unittest2.TextTestRunner(verbosity=2).run(suite)
+    run_tests(suite)

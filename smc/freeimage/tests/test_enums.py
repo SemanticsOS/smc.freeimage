@@ -22,13 +22,9 @@
 # THIS LICENSE. NO USE OF ANY COVERED CODE IS AUTHORIZED HEREUNDER EXCEPT UNDER
 # THIS DISCLAIMER.
 #
-try:
-    import unittest2
-except ImportError:
-    import unittest as unittest2
 
 from smc.freeimage import enums
-from smc.freeimage.tests.common import owner
+from smc.freeimage.tests.common import owner, unittest2, run_tests
 
 ENUMS = ['CONSTANTS', 'FI_COLOR', 'FI_COLOR_CHANNEL', 'FI_COLOR_TYPE',
          'FI_DITHER', 'FI_FILTER', 'FI_FORMAT',
@@ -67,4 +63,4 @@ def test_main():
     return suite
 
 if __name__ == "__main__": # pragma: no cover
-    unittest2.TextTestRunner().run(test_main())
+    run_tests(test_main())

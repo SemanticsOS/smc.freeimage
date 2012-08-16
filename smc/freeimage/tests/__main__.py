@@ -11,8 +11,8 @@
 # Purpose     : unit tests
 #=============================================================================
 
-from smc.freeimage.tests.common import unittest2
+from smc.freeimage.tests.common import unittest2, run_tests
 from smc.freeimage.tests import test_main
 
 if __name__ == "__main__": # pragma: no cover
-    unittest2.TextTestRunner(verbosity=2).run(test_main())
+    run_tests(test_main())

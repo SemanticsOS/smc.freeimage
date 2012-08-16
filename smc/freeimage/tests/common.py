@@ -35,7 +35,17 @@ except ImportError:
     import unittest as unittest2
 
 
+def run_tests(suite): # pragma: no cover
+    """Run tests
+    """
+    runner = unittest2.TextTestRunner(verbosity=2)
+    result = runner.run(suite)
+    if not result.wasSuccessful():
+        sys.exit(1)
+
 def find_testdata(): # pragma: no cover
+    """Find directory with testdata images
+    """
     current = os.path.dirname(os.path.abspath(__file__))
     while True:
         testdata = os.path.join(current, "testdata")

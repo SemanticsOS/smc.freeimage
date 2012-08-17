@@ -8,6 +8,6 @@ Required files
 
 FreeImage.h
 lcms2.h
-libfreeimage.a
+libfreeimage.a or libfreeimageturbo.a
 liblcms2.a
 

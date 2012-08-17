@@ -2293,6 +2293,9 @@ cdef class ImageDataRepresentation:
     # CMYK
     cdef readonly char pixel_layout[PIXEL_LAYOUT_LENGTH]
 
+    # TODO: TIFF supports more color spaces like YCbCr and three L*a*b but
+    # FreeImage doesn't handle them yet. See PhotometricInterpretation
+
     fromImage = classmethod(ImageDataRepresentation_fromImage)
 
     def __init__(self, int image_type, int color_type, int bpp=0):

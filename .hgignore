@@ -13,6 +13,7 @@ smc/freeimage/_freeimage.c
 static/FreeImage.h
 static/lcms2.h
 static/libfreeimage.a
+static/libfreeimageturbo.a
 static/liblcms2.a
 
 syntax: glob

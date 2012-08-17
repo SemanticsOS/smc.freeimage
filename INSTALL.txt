@@ -41,3 +41,12 @@ Then copy `lcms2-2.3/src/.libs/liblcms2.a`, `lcms2-2.3/include/lcms2.h`,
 folder of the project and run::
 
   $ python setup.py install --static
+
+
+FreeImage-turbo
+---------------
+
+smc.freeimage's JPEG performance can be greatly enhanced with FreeImage-turbo,
+a fork of FreeImage with libjpeg-turbo instead of libjpeg. The fork is
+available at https://bitbucket.org/tiran/freeimageturbo . Static builds with
+libfreeimageturbo.a are supported, too.

@@ -1,4 +1,4 @@
+compiler: VS 2008 Professional
 freeimage: 3.15.3
 freeimageturbo: 3.15.3 with libjpeg-turbo 1.2.1
 lcms2: 2.3
-

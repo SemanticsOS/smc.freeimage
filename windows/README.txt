@@ -1,13 +1,6 @@
-Requirements
-============
+Windows support
+===============
 
- * MinGW32 compiler
- * MinGW utils
- * MSys 1.0.10
-
-Downloads
-=========
-
-http://mingw.org/
-http://sourceforge.net/project/showfiles.php?group_id=2435
-http://mingw.org/node/18
+The windows directory contains the header files and DLLs for Windows builds.
+These files aren't shipped with the source distribution. You can download
+them from the HG repository.

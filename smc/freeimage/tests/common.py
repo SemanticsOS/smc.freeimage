@@ -35,10 +35,10 @@ except ImportError:
     import unittest as unittest2
 
 
-def run_tests(suite): # pragma: no cover
+def run_tests(suite, verbosity=2): # pragma: no cover
     """Run tests
     """
-    runner = unittest2.TextTestRunner(verbosity=2)
+    runner = unittest2.TextTestRunner(verbosity=verbosity)
     result = runner.run(suite)
     if not result.wasSuccessful():
         sys.exit(1)

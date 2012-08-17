@@ -69,7 +69,7 @@ cdef object funicode(smc_fi.const_char_ptr s, errors="strict"):
     """Unicode helper from lxml's apihelpers.pxi
     """
     cdef Py_ssize_t slen
-    cdef char* spos
+    cdef smc_fi.const_char *spos
     cdef bint is_non_ascii
     if smc_fi.IS_PYTHON3:
         slen = string.strlen(s)
@@ -888,10 +888,10 @@ cdef class Image:
     cdef int _check_access(self, bint pixels) except -1:
         if self._dib == NULL:
             raise IOError("Operation on closed image")
-            return -1
+            #return -1
         if pixels and not fi.FreeImage_HasPixels(self._dib):
             raise IOError("Image has no pixel data loaded")
-            return -1
+            #return -1
         return 0
 
     def __dealloc__(self):
@@ -2463,8 +2463,9 @@ cdef class ImageDataRepresentation:
                 "format='%s', itemsize=%i, pixelcount=%i, mode='%s', "
                 "lcms_type=%i, pixel_layout='%s'>" %
                 (self.image_type, self.color_type, self.bpp,
-                 self.format, self.itemsize, self.pixelcount, self.mode,
-                 self.lcms_type, self.pixel_layout))
+                 self.format.decode("ascii"), self.itemsize, self.pixelcount,
+                 self.mode.decode("ascii"), self.lcms_type,
+                 self.pixel_layout.decode("ascii")))
 
 
 #--- module functions

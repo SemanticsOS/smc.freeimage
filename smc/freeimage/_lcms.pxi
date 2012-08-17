@@ -107,20 +107,20 @@ cdef lcms.cmsHPROFILE createHProfile(char * iccprofile, unsigned int size, mode=
             hProfile = lcms.cmsCreate_sRGBProfileTHR(context)
         if hProfile == NULL:
             raise LCMSException("Failed to create sRGB %s profile" % mode)
-            return NULL
+            #return NULL
     elif size == 4 and string.strcmp(iccprofile, b"gray") == 0:
         with nogil:
             curve = lcms.cmsBuildGamma(context, 1.0)
             hProfile = lcms.cmsCreateGrayProfileTHR(context, lcms.cmsD50_xyY(), curve)
         if hProfile == NULL:
             raise LCMSException("Failed to create gray %s profile" % mode)
-            return NULL
+            #return NULL
     else:
         with nogil:
             hProfile = lcms.cmsOpenProfileFromMemTHR(context, iccprofile, size)
         if hProfile == NULL:
             raise LCMSException("Failed to set %s profile" % mode)
-            return NULL
+            #return NULL
 
     return hProfile
 
@@ -171,20 +171,20 @@ cdef class LCMSTransformation(object):
                 hProfile = lcms.cmsCreate_sRGBProfileTHR(context)
             if hProfile == NULL:
                 raise LCMSException("Failed to create sRGB %s profile" % mode)
-                return NULL
+                #return NULL
         elif size == 4 and string.strcmp(iccprofile, b"gray") == 0:
             with nogil:
                 curve = lcms.cmsBuildGamma(context, 1.0)
                 hProfile = lcms.cmsCreateGrayProfileTHR(context, lcms.cmsD50_xyY(), curve)
             if hProfile == NULL:
                 raise LCMSException("Failed to create gray %s profile" % mode)
-                return NULL
+                #return NULL
         else:
             with nogil:
                 hProfile = lcms.cmsOpenProfileFromMemTHR(context, iccprofile, size)
             if hProfile == NULL:
                 raise LCMSException("Failed to set %s profile" % mode)
-                return NULL
+                #return NULL
 
         return hProfile
 
@@ -195,7 +195,7 @@ cdef class LCMSTransformation(object):
             raise LCMSException("No in profile")
         if self.hOutProfile == NULL:
             raise LCMSException("No out profile")
-            return -1
+            #return -1
         self.hTransform = lcms.cmsCreateTransformTHR(< lcms.cmsContext > cpython.PyThread_get_thread_ident(),
                                              self.hInProfile, inputformat,
                                              self.hOutProfile, outputformat,

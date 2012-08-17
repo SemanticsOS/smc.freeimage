@@ -79,11 +79,16 @@ decoder optimization and reduce performance a lot. Please read the section
 "Restart Makers" on the page http://www.libjpeg-turbo.org/About/Performance
 for more information.
 
-Python:: 2.7.3
-read / write cycles:: 300
-test image:: 1210x1778 24bpp JPEG (pon.jpg)
-platform:: Ubuntu 12.04 X86_64
-hardware:: Intel Xeon hexacore W3680@3.33GHz with 24 GB RAM
+Python::
+  2.7.3
+read / write cycles::
+  300
+test image::
+  1210x1778 24bpp JPEG (pon.jpg)
+platform::
+  Ubuntu 12.04 X86_64
+hardware::
+  Intel Xeon hexacore W3680@3.33GHz with 24 GB RAM
 
 smc.freeimage, FreeImage 3.15.3 standard
 ----------------------------------------

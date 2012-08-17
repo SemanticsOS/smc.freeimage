@@ -101,7 +101,7 @@ def main(upload=False):
     print("Pythons:")
     for python in pythons:
         print("    %s" % python)
-	print("\n")
+    print("\n")
 
     cleanup_dir("build")
     cleanup_dir("dist")

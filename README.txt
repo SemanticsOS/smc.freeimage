@@ -79,17 +79,20 @@ decoder optimization and reduce performance a lot. Please read the section
 "Restart Makers" on the page http://www.libjpeg-turbo.org/About/Performance
 for more information.
 
-Python 2.7.3
-read / write cycles: 300
-test image: 1210x1778 24bpp JPEG (pon.jpg)
-platform: Ubuntu 12.04 X86_64
-hardware: Intel Xeon hexacore W3680@3.33GHz with 24 GB RAM
+Python:: 2.7.3
+read / write cycles:: 300
+test image:: 1210x1778 24bpp JPEG (pon.jpg)
+platform:: Ubuntu 12.04 X86_64
+hardware:: Intel Xeon hexacore W3680@3.33GHz with 24 GB RAM
 
 smc.freeimage, FreeImage 3.15.3 standard
+----------------------------------------
  - read JPEG 12.857 sec
  - read JPEG 6.629 sec (resaved)
  - write JPEG 21.817 sec
+
 smc.freeimage, FreeImage 3.15.3 with jpeg turbo
+-----------------------------------------------
  - read JPEG 9.297 sec
  - read JPEG 3.909 sec (resaved)
  - write JPEG 5.857 sec
@@ -103,7 +106,9 @@ smc.freeimage, FreeImage 3.15.3 with jpeg turbo
  - resize 10.232 sec (lanczos3)
  - tiff numpy.asarray() with bytescale() 0.006 sec
  - tiff load + numpy.asarray() with bytescale() 18.043 sec
+
 PIL 1.1.7
+---------
  - read JPEG 30.389 sec
  - read JPEG 23.118 sec (resaved)
  - write JPEG 34.405 sec
@@ -172,11 +177,20 @@ An experimental fork of FreeImage with libjpeg-turbo is available at
 https://bitbucket.org/tiran/freeimageturbo
 
 
+Testdata and Windows build files
+================================
+
+Neither the Windows build files nor the test images are included in the
+source distribution. All files can be downloaded from
+https://bitbucket.org/tiran/smc.freeimage .
+
+
 Authors
 =======
 
 Christian Heimes
-Dirk Rothe
+
+Dirk Rothe (testing and proposals)
 
 
 Copyright

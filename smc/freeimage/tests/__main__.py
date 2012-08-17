@@ -11,8 +11,13 @@
 # Purpose     : unit tests
 #=============================================================================
 
+import sys
 from smc.freeimage.tests.common import unittest2, run_tests
 from smc.freeimage.tests import test_main
 
 if __name__ == "__main__": # pragma: no cover
-    run_tests(test_main())
+    if "-q" in sys.argv:
+        verbosity = 1
+    else:
+        verbosity = 2
+    run_tests(test_main(), verbosity)

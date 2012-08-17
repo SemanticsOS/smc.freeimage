@@ -50,7 +50,7 @@
 "SGI";28;"image/x-sgi";"SGI Image Format";1;0;1;0;"sgi"
 "SPIDER";;;;0;0;1;1;
 "TARGA";17;"image/x-tga";"Truevision Targa";1;1;1;1;"tga, targa"
-"TIFF";18;"image/tiff";"Tagged Image File Format";1;1;"*";"*";"tif, tiff"
+"TIFF";18;"image/tiff";"Tagged Image File Format";1;1;"limited";"limited";"tif, tiff"
 ;;;"TIFF G3 compression";1;1;0;0;
 ;;;"TIFF G4 compression";1;1;0;0;
 ;;;"multipage TIFF";1;1;0;0;

@@ -46,7 +46,7 @@ def _runpy(python, *args):
     return 0
 
 def runtests(python):
-    _runpy(python, "setup.py", "build", "build_ext", "-i")
+    _runpy(python, "setup.py", "build", "build_ext", "--inplace")
     _runpy(python, "-m", "smc.freeimage.tests.__main__", "-q")
 
 def bdist_wininst(python, upload=False):
@@ -56,10 +56,12 @@ def bdist_wininst(python, upload=False):
     _runpy(python, "setup.py", "bdist_wininst", *args)
     _runpy(python, "setup.py", "bdist_egg", *args)
 
-def sdist(upload=False):
+def sdist(upload, sign):
     args = []
     if upload:
         args.append("upload")
+    if sign:
+        args.append("--sign")
     _runpy(sys.executable, "setup.py", "sdist", "--formats=gztar", *args)
     _runpy(sys.executable, "setup.py", "sdist", "--formats=zip", *args)
 
@@ -92,7 +94,7 @@ def getWindowsPythons():
                 pythons.append(pyexe)
     return pythons
 
-def main(upload=False):
+def main(upload_bdist=False, upload_sdist=False):
     if WINDOWS:
         pythons = getWindowsPythons()
     else:
@@ -101,12 +103,13 @@ def main(upload=False):
     print("Pythons:")
     for python in pythons:
         print("    %s" % python)
-    print("\n")
+
+    if upload_sdist:
+        sdist(upload_sdist, sign=True)
 
     cleanup_dir("build")
     cleanup_dir("dist")
 
-    sdist(upload)
     fails = []
 
     for python in pythons:
@@ -117,13 +120,13 @@ def main(upload=False):
         try:
             runtests(python)
             if WINDOWS:
-                bdist_wininst(python, upload)
+                bdist_wininst(python, upload_bdist)
         except Exception:
             logging.exception("Failed %s" % python)
             fails.append(python)
 
     if fails:
-        print("Tests or build failed for %s" % ", ".join(fails))
+        print("\nTests or build failed for %s" % ", ".join(fails))
         sys.exit(1)
 
 if __name__ == "__main__":

@@ -460,7 +460,9 @@ class TestImage(TestImageBase):
 
 
 class TestImageOldBuffer(TestImageBase):
+    
     @owner("c.heimes")
+    @unittest2.skipIf(sys.version_info > (3, 0), "needs Python 2.x")
     def test_toBuffer(self):
         for i in range(10):
             imgbuf = self.img.toBuffer()
@@ -472,6 +474,7 @@ class TestImageOldBuffer(TestImageBase):
             self._test_jpeg(newimg)
 
     @owner("c.heimes")
+    @unittest2.skipIf(sys.version_info > (3, 0), "needs Python 2.x")
     def test_toBuffer_file(self):
         #if sys.platform == 'win32':
         #    size = 366548
@@ -499,6 +502,7 @@ class TestImageOldBuffer(TestImageBase):
         self.assertEqual(imgbuf.read(4), b'\x89PNG')
 
     @owner("c.heimes")
+    @unittest2.skipIf(sys.version_info > (3, 0), "needs Python 2.x")
     def test_toBuffer_PIL(self):
         try:
             from PIL.Image import open as pil_open
@@ -515,6 +519,7 @@ class TestImageOldBuffer(TestImageBase):
         del pilimg
 
     @owner("c.heimes")
+    @unittest2.skipIf(sys.version_info > (3, 0), "needs Python 2.x")
     def test_buffer_keepref(self):
         imgbuf1 = self.img.toBuffer()
         imgbuf2 = self.img.toBuffer()
@@ -541,7 +546,9 @@ class TestImageOldBuffer(TestImageBase):
 
 
 class TestImageNewBuffer(TestImageBase):
+    
     @owner("c.heimes")
+    @unittest2.skipIf(sys.version_info < (2, 7), "needs Python >= 2.7")
     def test_newbuffer(self):
         img = self.buffertest
         m = memoryview(img)
@@ -894,8 +901,7 @@ def test_main():
     suite.addTest(unittest2.defaultTestLoader.loadTestsFromTestCase(TestImage))
     suite.addTest(unittest2.defaultTestLoader.loadTestsFromTestCase(TestMetadata))
     suite.addTest(unittest2.defaultTestLoader.loadTestsFromTestCase(TestMultiPage))
-    if sys.version_info < (3, 0):
-        suite.addTest(unittest2.defaultTestLoader.loadTestsFromTestCase(TestImageOldBuffer))
+    suite.addTest(unittest2.defaultTestLoader.loadTestsFromTestCase(TestImageOldBuffer))
     suite.addTest(unittest2.defaultTestLoader.loadTestsFromTestCase(TestImageNewBuffer))
     return suite
 

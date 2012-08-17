@@ -8,7 +8,7 @@ recursive-include smc/freeimage *.pyx *.pxd *.pxi *.h *.c
 #recursive-include smc/freeimage/tests/testdata *.tiff *.jpg *.icm
 include smc/freeimage/tests/testdata/README.txt
 recursive-include smc/freeimage/tests/testdata README.txt
-recursive-include docs *.rst *.txt *.html *.css Makefile
+recursive-include docs *.rst *.txt *.html *.css *.csv Makefile
 include docs/*.py docs/make.bat
 include static/README.txt
 include windows/README.txt

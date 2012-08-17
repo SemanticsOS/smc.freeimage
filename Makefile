@@ -47,18 +47,15 @@ realclean: clean
 	rm -f TAGS tags
 	$(PYTHON) setup.py clean -a
 
-egg_info:
-	$(PYTHON) setup.py egg_info
+sdist:
+	$(PYTHON) setup.py sdist --format=gztar
+	$(PYTHON) setup.py sdist --format=zip
 
-egg: egg_info inplace
-	rm -rf smc.freeimage.egg-info
-	$(PYTHON) setup.py bdist_egg
+sphinx:
+	$(PYTHON) setup.py sphinx
 
-develop: egg_info inplace
-	$(PYTHON) setup.py develop
-
-sdist: egg_info
-	$(PYTHON) setup.py sdist
+upload_sphinx:
+	$(PYTHON) setup.py sphinx upload_sphinx
  
 pxd:
 	$(PYTHON) fi2pxd.py

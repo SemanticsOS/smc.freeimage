@@ -5,12 +5,15 @@ import sys
 import os
 import subprocess
 import shutil
+import logging
 
 
 BASEDIR = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 SMCFI = os.path.join(BASEDIR, "smc", "freeimage")
 PYTHONS = ["python2.6", "python2.7", "python3.2", "python3.3"]
 WINDOWS = sys.platform == "win32"
+
+logging.basicConfig()
 
 
 def cleanup_dir(dname):
@@ -50,8 +53,8 @@ def bdist_wininst(python, upload=False):
     args = []
     if upload:
         args.append("upload")
-    _runpy(python, "setup.py", "build_wininst", *args)
-    _runpy(python, "setup.py", "build_egg", *args)
+    _runpy(python, "setup.py", "bdist_wininst", *args)
+    _runpy(python, "setup.py", "bdist_egg", *args)
 
 def sdist(upload=False):
     args = []
@@ -95,23 +98,28 @@ def main(upload=False):
     else:
         pythons = getUnixPythons()
 
-    print("Pythons: %s\n" % ", ".join(pythons))
+    print("Pythons:")
+    for python in pythons:
+        print("    %s" % python)
+	print("\n")
 
-    for dname in "build", "dist":
-        cleanup_dir(dname)
+    cleanup_dir("build")
+    cleanup_dir("dist")
 
     sdist(upload)
     fails = []
 
     for python in pythons:
+        print("\n")
         print(python)
         print("-" * len(python))
         cleanup_exts()
         try:
             runtests(python)
             if WINDOWS:
-                bdist_wininst(upload)
+                bdist_wininst(python, upload)
         except Exception:
+            logging.exception("Failed %s" % python)
             fails.append(python)
 
     if fails:

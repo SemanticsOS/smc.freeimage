@@ -200,8 +200,8 @@ Dirk Rothe (testing and proposals)
 
 Copyright
 =========
- 
-Copyright (C) 2008-2012 semantics GmbH. All Rights Reserved.:
+
+Copyright (C) 2008-2012 semantics GmbH. All Rights Reserved.::
 
   semantics
   Kommunikationsmanagement GmbH

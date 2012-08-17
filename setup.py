@@ -27,6 +27,7 @@ import os
 import sys
 import shutil
 import struct
+import io
 from glob import glob
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -70,6 +71,13 @@ else:
 
 from distutils.dep_util import newer_group
 from distutils.ccompiler import new_compiler
+
+def getLongDescription():
+    parts = []
+    for name in "README.txt", "CHANGES.txt":
+        with io.open(name, "r") as f:
+            parts.append(f.read())
+    return "\n".join(parts)
 
 
 def findlib(libname, library_dirs=None, **kwargs):
@@ -204,7 +212,7 @@ setup_info = dict(
     keywords="freeimage lcms image jpeg tiff png pil icc",
     license="FIPL or GPL",
     description="Python wrapper for FreeImage and LCMS2 libraries",
-    long_description=open("README.txt").read(),
+    long_description=getLongDescription(),
     classifiers=(
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",

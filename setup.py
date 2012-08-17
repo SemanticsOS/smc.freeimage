@@ -191,7 +191,7 @@ else:
 
 setup_info = dict(
     name="smc.freeimage",
-    version="0.2",
+    version="0.3dev",
     ext_modules=[
         Extension("smc.freeimage._freeimage", freeimage_files,
                   extra_objects=fi_ext_extra_objects, **fi_ext_extras),

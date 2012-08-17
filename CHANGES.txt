@@ -2,6 +2,12 @@
 Changelog
 =========
 
+smc.freeimage 0.3
+-----------------
+
+*Release date: **-***-2012*
+
+
 smc.freeimage 0.2
 -----------------
 

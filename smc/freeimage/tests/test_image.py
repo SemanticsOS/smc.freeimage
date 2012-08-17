@@ -27,6 +27,7 @@ import os
 import sys
 import tempfile
 import shutil
+from pprint import pprint
 
 from smc.freeimage import (Image, Multipage, UnknownImageError, OperationError,
                            ImageDataRepresentation, jpegTransform, hasJPEGTurbo,
@@ -173,6 +174,44 @@ class TestImage(TestImageBase):
         self.assertEqual(img.format, FI_FORMAT.FIF_TIFF)
         self.assertEqual(img.size, (1136, 1618))
         self.assertTrue(img.has_pixels)
+
+    @owner("c.heimes")
+    def test_cmyk(self):
+        img = self.cmyk
+        self.assertEqual(img.format, FI_FORMAT.FIF_TIFF)
+        self.assertEqual(img.size, (5, 7))
+        self.assertTrue(img.has_pixels)
+        self.assertEqual(img.type, FI_TYPE.FIT_BITMAP)
+        self.assertEqual(img.bpp, 32)
+        self.assertEqual(img.dpi, (72.0, 72.0))
+        self.assertEqual(img.dpm, (2835, 2835))
+        self.assertEqual(img.icc_cmyk, True)
+        self.assertEqual(img.has_icc, False)
+        self.assertEqual(img.colors_used, 0)
+        self.assertEqual(img.color_type, FI_COLOR_TYPE.FIC_CMYK)
+        self.assertEqual(img.color_type_name, "CMYK")
+        self.assertEqual(img.is_transparent, False)
+        self.assertEqual(img.has_bg_color, False)
+        self.assertEqual(img.rgb_mask, None)
+
+        self.assertEqual(img.getMetadata(), {'FIMD_EXIF_MAIN': {
+                    'BitsPerSample': ('8', 'Number of bits per component'),
+                    'Compression': ('dump mode (1)', 'Compression scheme'),
+                    'ImageLength': ('7', 'Image height'),
+                    'ImageWidth': ('5', 'Image width'),
+                    'PhotometricInterpretation': ('5', 'Pixel composition'),
+                    'PlanarConfiguration': ('1', 'Image data arrangement'),
+                    'ResolutionUnit': ('inches',
+                                       'Unit of X and Y resolution'),
+                    'RowsPerStrip': ('64', 'Number of rows per strip'),
+                    'SamplesPerPixel': ('4', 'Number of components'),
+                    'StripByteCounts': ('140', 'Bytes per compressed strip'),
+                    'StripOffsets': ('8', 'Image data location'),
+                    'XResolution': ('72',
+                                    'Image resolution in width direction'),
+                    'YResolution': ('72',
+                                    'Image resolution in height direction')}}
+        )
 
     @owner("c.heimes")
     def test_loadnopixels(self):
@@ -460,7 +499,7 @@ class TestImage(TestImageBase):
 
 
 class TestImageOldBuffer(TestImageBase):
-    
+
     @owner("c.heimes")
     @unittest2.skipIf(sys.version_info > (3, 0), "needs Python 2.x")
     def test_toBuffer(self):
@@ -546,7 +585,7 @@ class TestImageOldBuffer(TestImageBase):
 
 
 class TestImageNewBuffer(TestImageBase):
-    
+
     @owner("c.heimes")
     @unittest2.skipIf(sys.version_info < (2, 7), "needs Python >= 2.7")
     def test_newbuffer(self):
@@ -924,7 +963,8 @@ if __name__ == "__main__": # pragma: no cover
     #suite.addTest(TestMetadata("test_icc"))
     #suite.addTest(TestImage("test_rotation"))
     #suite.addTest(TestImage("test_toBuffer_PIL"))
-    suite.addTest(TestImage("test_daterepresentation"))
+    #suite.addTest(TestImage("test_daterepresentation"))
+    suite.addTest(TestImage("test_cmyk"))
     #suite.addTest(TestMetadata("test_metadata"))
     #suite = test_main()
     run_tests(suite)

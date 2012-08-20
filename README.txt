@@ -72,7 +72,11 @@ Performance
 ===========
 
 smc.freeimage with libjpeg-turbo read JPEGs about three to six times faster
-than PIL and writes JPEGs more than five times faster.
+than a standard build of PIL and writes JPEGs more than five times faster. By
+default PIL is compiled against the standard libjpeg library. Some Linux
+distributions have started to install libjpeg-turbo as libjpeg.so (libjpeg-turbo
+has a libjpeg v8 compatible ABI). On these platforms PIL is almost as fast as
+smc.freeimage.
 
 JPEG's restart markers are not compatible with libjpeg-turbo's Huffman
 decoder optimization and reduce performance a lot. Please read the section
@@ -86,18 +90,19 @@ read / write cycles::
 test image:
   1210x1778 24bpp JPEG (pon.jpg)
 platform:
-  Ubuntu 12.04 X86_64
+  Linux 64bit
 hardware:
   Intel Xeon hexacore W3680@3.33GHz with 24 GB RAM
 
-smc.freeimage, FreeImage 3.15.3 standard
-----------------------------------------
+
+smc.freeimage, FreeImage 3.15.3 (with standard libjpeg)
+-------------------------------------------------------
  - read JPEG 12.857 sec
  - read JPEG 6.629 sec (resaved)
  - write JPEG 21.817 sec
 
-smc.freeimage, FreeImage 3.15.3 with jpeg turbo
------------------------------------------------
+smc.freeimage, FreeImage 3.15.3 (with libjpeg-turbo)
+----------------------------------------------------
  - read JPEG 9.297 sec
  - read JPEG 3.909 sec (resaved)
  - write JPEG 5.857 sec
@@ -112,8 +117,8 @@ smc.freeimage, FreeImage 3.15.3 with jpeg turbo
  - tiff numpy.asarray() with bytescale() 0.006 sec
  - tiff load + numpy.asarray() with bytescale() 18.043 sec
 
-PIL 1.1.7
----------
+PIL 1.1.7 (with standard libjpeg)
+---------------------------------
  - read JPEG 30.389 sec
  - read JPEG 23.118 sec (resaved)
  - write JPEG 34.405 sec
@@ -125,6 +130,28 @@ PIL 1.1.7
  - resize 8.056 sec (antialias)
  - tiff scipy fromimage() with bytescale() 1.165 sec
  - tiff scipy imread() with bytescale() 22.939 sec
+
+PIL 1.1.7 (with libjpeg-turbo)
+------------------------------
+ - read JPEG 9.403 sec
+ - read JPEG 4.696 sec (resaved)
+ - write JPEG 6.165 sec
+
+pgmagick 0.5.3 (GraphicsMagick 1.3.x) with default libjpeg
+----------------------------------------------------------
+ - read JPEG 31.487 sec
+ - read JPEG 24.047 sec (resaved)
+ - write JPEG 38.643 sec
+ - read LZW TIFF 20.476 sec
+ - read biton G4 TIFF 15.224 sec
+ - resize 1.412 sec (BoxFilter)
+ - BUG: pgmagick ignores all filter settings for filterType()
+
+pgmagick 0.5.3 (GraphicsMagick 1.3.x)  (with libjpeg-turbo)
+-----------------------------------------------------------
+ - read JPEG 9.221 sec
+ - read JPEG 4.522 sec (resaved)
+ - write JPEG 8.595 sec
 
 
 Comparison to PIL (Pros and Cons)

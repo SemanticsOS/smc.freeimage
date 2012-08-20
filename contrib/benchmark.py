@@ -11,23 +11,36 @@ try:
     from numpy import asarray
 except ImportError:
     print("No numpy and scipy")
+    HAS_NUMPY = False
+else:
+    HAS_NUMPY = True
+
+try:
+    from pgmagick import Image as PGMagickImage
+    import pgmagick
+except ImportError:
+    print("no pgmagick")
+    HAS_PGMAGICK = False
+else:
+    HAS_PGMAGICK = True
 
 RW_COUNT = 300
 RESIZE_COUNT = 50
 
-print "Python %i.%i.%i" % sys.version_info[:3]
-print "read / write cycles: %i" % RW_COUNT
-print "resize cycles: %i" % RESIZE_COUNT
-print "JPEG: %r" % Image(IMG)
-print "TIFF LZW: %r" % Image(TIFF)
-print "TIFF bitonal G4: %r" % Image(BITON)
+print "Python:\n  %i.%i.%i" % sys.version_info[:3]
+print "read / write cycles:\n  %i" % RW_COUNT
+print "resize cycles:\n  %i" % RESIZE_COUNT
+print "JPEG:\n  %r" % Image(IMG)
+print "TIFF LZW:\n  %r" % Image(TIFF)
+print "TIFF bitonal G4:\n  %r" % Image(BITON)
 print ""
 
 if hasJPEGTurbo():
-    print "smc.freeimage, FreeImage %s with jpeg turbo" % getVersion()
+    hdr = "smc.freeimage, FreeImage %s (with libjpeg-turbo)" % getVersion()
 else:
-    print "smc.freeimage, FreeImage %s standard" % getVersion()
+    hdr = "smc.freeimage, FreeImage %s (with standard libjpeg)" % getVersion()
 
+print "\n%s\n%s" % (hdr, "-" * len(hdr))
 
 #--- FreeImage load
 start = time()
@@ -83,28 +96,31 @@ for name, flt in filters:
     print " - resize %0.3f sec (%s)" % (end, name)
 
 # numpy
-tiff = Image(TIFF)
-start = time()
-for i in xrange(RW_COUNT):
-    arr = asarray(tiff)
-    # change last BGR -> RGB
-    arr = arr[..., ::-1]
-    bytescale(arr, 64, 192)
-end = time() - start
-print " - tiff numpy.asarray() with bytescale() %0.3f sec" % end
-
-start = time()
-for i in xrange(RW_COUNT):
+if HAS_NUMPY:
     tiff = Image(TIFF)
-    arr = asarray(tiff)
-    arr = arr[..., ::-1]
-    bytescale(arr, 64, 192)
-end = time() - start
-print " - tiff load + numpy.asarray() with bytescale() %0.3f sec" % end
+    start = time()
+    for i in xrange(RW_COUNT):
+        arr = asarray(tiff)
+        # change last BGR -> RGB
+        arr = arr[..., ::-1]
+        bytescale(arr, 64, 192)
+    end = time() - start
+    print " - tiff numpy.asarray() with bytescale() %0.3f sec" % end
+
+    start = time()
+    for i in xrange(RW_COUNT):
+        tiff = Image(TIFF)
+        arr = asarray(tiff)
+        arr = arr[..., ::-1]
+        bytescale(arr, 64, 192)
+    end = time() - start
+    print " - tiff load + numpy.asarray() with bytescale() %0.3f sec" % end
 
 # -------------------------------------------------------------------
 # PIL load
-print "PIL %s" % PIL_VERSION
+hdr = "PIL %s (with standard libjpeg)" % PIL_VERSION
+print "\n%s\n%s" % (hdr, "-" * len(hdr))
+
 start = time()
 for i in xrange(RW_COUNT):
     pil_open(IMG).load()
@@ -148,18 +164,79 @@ for name, flt in filters:
     print " - resize %0.3f sec (%s)" % (end, name)
 
 # scipy
-tiff = pil_open(TIFF)
-tiff.load()
-start = time()
-for i in xrange(RW_COUNT):
-    arr = asarray(tiff)
-    bytescale(arr, 64, 192)
-end = time() - start
-print " - tiff numpy.asarray() with bytescale() %0.3f sec" % end
+if HAS_NUMPY:
+    tiff = pil_open(TIFF)
+    tiff.load()
+    start = time()
+    for i in xrange(RW_COUNT):
+        arr = asarray(tiff)
+        bytescale(arr, 64, 192)
+    end = time() - start
+    print " - tiff numpy.asarray() with bytescale() %0.3f sec" % end
 
-start = time()
-for i in xrange(RW_COUNT):
-    arr = imread(TIFF)
-    bytescale(arr, 64, 192)
-end = time() - start
-print " - tiff scipy imread() with bytescale() %0.3f sec" % end
+    start = time()
+    for i in xrange(RW_COUNT):
+        arr = imread(TIFF)
+        bytescale(arr, 64, 192)
+    end = time() - start
+    print " - tiff scipy imread() with bytescale() %0.3f sec" % end
+
+# -------------------------------------------------------------------
+# pgmagick load
+if HAS_PGMAGICK:
+    hdr = ("pgmagick %s (%s %s) (with standard libjpeg)" %
+           (pgmagick.__version__, pgmagick.gminfo.library, pgmagick.gminfo.version))
+    print "\n%s\n%s" % (hdr, "-" * len(hdr))
+
+    start = time()
+    for i in xrange(RW_COUNT):
+        PGMagickImage(IMG)
+    end = time() - start
+    print " - read JPEG %0.3f sec" % end
+
+    # load resaved
+    PGMagickImage(IMG).write("pon_rewrite_pgmagick.jpg")
+    start = time()
+    for i in xrange(RW_COUNT):
+        PGMagickImage("pon_rewrite_pgmagick.jpg")
+    end = time() - start
+    print " - read JPEG %0.3f sec (resaved)" % end
+
+    # write
+    img = PGMagickImage(IMG)
+    start = time()
+    for i in xrange(RW_COUNT):
+        img.write("testpgmagick.jpg")
+    end = time() - start
+    print " - write JPEG %0.3f sec" % end
+
+    # TIFF read
+    start = time()
+    for i in xrange(RW_COUNT):
+        PGMagickImage(TIFF)
+    end = time() - start
+    print " - read LZW TIFF %0.3f sec" % end
+
+    start = time()
+    for i in xrange(RW_COUNT):
+        PGMagickImage(BITON)
+    end = time() - start
+    print " - read biton G4 TIFF %0.3f sec" % end
+
+    # resize
+    filters = [("box", pgmagick.FilterTypes.BoxFilter),
+    #           ("quadratic", pgmagick.FilterTypes.QuadraticFilter),
+    #           ("cubic", pgmagick.FilterTypes.CubicFilter),
+    #           ("catrom", pgmagick.FilterTypes.CatromFilter),
+    #           ("lanczos", pgmagick.FilterTypes.LanczosFilter))
+    ]
+    for name, flt in filters:
+        # pgmagick resizes inplace, load list of images first
+        images = [PGMagickImage(IMG) for i in xrange(RESIZE_COUNT)]
+        start = time()
+        for img in images:
+            img.filterType(flt)
+            img.scale("%ix%i" % (width, height))
+        end = time() - start
+        print " - resize %0.3f sec (%s)" % (end, flt)
+        print " - BUG: pgmagick ignores all filter settings for filterType()"

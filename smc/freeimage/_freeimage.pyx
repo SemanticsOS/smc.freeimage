@@ -296,6 +296,10 @@ def dispatchFIError(cls, *args):
 
 
 class FreeImageError(Exception):
+    """Base class for all FreeImage related exceptions
+
+    :ivar fimsg: message from FreeImage_SetOutputMessage
+    """
     def __init__(self, *args, fimsg=None):
         if fimsg is not None:
             args = args + (fimsg,)
@@ -304,23 +308,28 @@ class FreeImageError(Exception):
 
 
 class UnknownImageError(FreeImageError):
-    pass
+    """Image can't be identified by FreeImage
+    """
 
 
 class LoadError(FreeImageError):
-    pass
+    """FreeImage is unable to load the image
+    """
 
 
 class SaveError(FreeImageError):
-    pass
+    """FreeImage is unable to save the image
+    """
 
 
 class OperationError(FreeImageError):
-    pass
+    """Some FreeImage operation failed or is not supported
+    """
 
 
 class FreeImageMemoryError(FreeImageError, MemoryError):
-    pass
+    """Unsufficient memory for FreeImage operation
+    """
 
 
 #--- wrappers
@@ -390,6 +399,8 @@ cdef _DibWrapper DibWrapper(fi.FIBITMAP* dib, oldimg):
 
 cdef class _BitmapInfo:
     """Wrapper for bitmap info header
+    
+    
     """
     cdef readonly fi.DWORD size
     cdef readonly fi.LONG  width
@@ -1308,7 +1319,7 @@ cdef class Image:
     property has_pixels:
         """Check if image is loaded with fi.FIF_LOAD_NOPIXELS
 
-        @return: True if image has pixel and isn't loaded with fi.FIF_LOAD_NOPIXELS
+        :return: True if image has pixel and isn't loaded with fi.FIF_LOAD_NOPIXELS
         """
         def __get__(self):
             self._check_access(0)
@@ -1382,9 +1393,9 @@ cdef class Image:
         Returns raw image data as bytes. It's up to you to interpret the raw
         bytes according to image type, bpp, color order and stride padding.
 
-        @note: FreeImage stores the lines upside down
-        @return: copy of raw image data
-        @rtype: bytes
+        :note: FreeImage stores the lines upside down
+        :return: copy of raw image data
+        :rtype: bytes
         """
         cdef fi.BYTE *bits
         cdef unsigned height, pitch
@@ -1439,7 +1450,7 @@ cdef class Image:
     def clone(self):
         """clone() -> new image
 
-        @note: clone uses low level FI functions to clone metadata and ICC, too.
+        :note: clone uses low level FI functions to clone metadata and ICC, too.
         """
         cdef fi.FIBITMAP* dib
         cdef Image clone
@@ -1574,7 +1585,7 @@ cdef class Image:
 
         Converts a bitmap to 1-bit monochrome bitmap
 
-        @param threshold: 0 to 255
+        :param threshold: 0 to 255
         """
         cdef fi.FIBITMAP* dib
         cdef Image new
@@ -1717,8 +1728,8 @@ cdef class Image:
     def getMetadata(self, binary=False, errors="strict"):
         """getMetadata() -> dict
 
-        @param binary: if true, return values as binary instead of unicode string
-        @param strict: encoding error handling for unicode string conversion
+        :param binary: if true, return values as binary instead of unicode string
+        :param strict: encoding error handling for unicode string conversion
         """
         cdef fi.FIMETADATA *handle = NULL
         cdef fi.FITAG *tag
@@ -2507,8 +2518,8 @@ def getColorOrder():
     Windows and X86 platforms are usually little endian machines while
     PowerPC is usually big endian. ARM processors support both endianess.
 
-    @return: either "RGB" or "BGR"
-    @rtype: str
+    :return: either "RGB" or "BGR"
+    :rtype: str
     """
     if fi.FREEIMAGE_COLORORDER == fi.FREEIMAGE_COLORORDER_RGB:
         return "RGB"
@@ -2518,16 +2529,16 @@ def getColorOrder():
 def getColorIndexRGBA():
     """Get index of RGBA quad
 
-    @return: R, G, B, A
-    @rtype: tuple of four ints
+    :return: R, G, B, A
+    :rtype: tuple of four ints
     """
     return fi.FI_RGBA_RED, fi.FI_RGBA_GREEN, fi.FI_RGBA_BLUE, fi.FI_RGBA_ALPHA
 
 def getColorMaskRGBA():
     """Get color mask of RGBA quad
 
-    @return: R, G, B, A
-    @rtype: tuple of four ints
+    :return: R, G, B, A
+    :rtype: tuple of four ints
     """
     return (<unsigned long>fi.FI_RGBA_RED_MASK,
             <unsigned long>fi.FI_RGBA_GREEN_MASK,
@@ -2537,8 +2548,8 @@ def getColorMaskRGBA():
 def getColorShiftRGBA():
     """Get color shift of RGBA quad
 
-    @return: R, G, B, A
-    @rtype: tuple of four ints
+    :return: R, G, B, A
+    :rtype: tuple of four ints
     """
     return (fi.FI_RGBA_RED_SHIFT,
             fi.FI_RGBA_GREEN_SHIFT,
@@ -2548,37 +2559,42 @@ def getColorShiftRGBA():
 def getColorMask555():
     """Get color mask of 16bit 555 image
 
-    @return: R, G, B
-    @rtype: tuple of three ints
+    :return: R, G, B
+    :rtype: tuple of three ints
     """
     return fi.FI16_555_RED_MASK, fi.FI16_555_GREEN_MASK, fi.FI16_555_BLUE_MASK
 
 def getColorShift555():
     """Get color shift of 16bit 555 image
 
-    @return: R, G, B
-    @rtype: tuple of three ints
+    :return: R, G, B
+    :rtype: tuple of three ints
     """
     return fi.FI16_555_RED_SHIFT, fi.FI16_555_GREEN_SHIFT, fi.FI16_555_BLUE_SHIFT
 
 def getColorMask565():
     """Get color mask of 16bit 565 image
 
-    @return: R, G, B
-    @rtype: tuple of three ints
+    :return: R, G, B
+    :rtype: tuple of three ints
     """
     return fi.FI16_565_RED_MASK, fi.FI16_565_GREEN_MASK, fi.FI16_565_BLUE_MASK
 
 def getColorShift565():
     """Get color shift of 16bit 565 image
 
-    @return: R, G, B
-    @rtype: tuple of three ints
+    :return: R, G, B triple
+    :rtype: tuple of three ints
     """
     return fi.FI16_565_RED_SHIFT, fi.FI16_565_GREEN_SHIFT, fi.FI16_565_BLUE_SHIFT
 
 def lookupX11Color(name):
-    """lookupX11Color(name) -> (r, g, b)
+    """Lookup RGB values for a X11 color name
+
+    :param name: name of the color
+    :type name: str
+    :return: R, G, B triple
+    :rtype: tuple of three ints
     """
     cdef fi.BYTE red, green, blue
     name = _decodeFilename(name)
@@ -2587,7 +2603,12 @@ def lookupX11Color(name):
     return (red, green, blue)
 
 def lookupSVGColor(name):
-    """lookupSVGColor(name) -> (r, g, b)
+    """Lookup RGB values for a SVG color name
+
+    :param name: name of the color
+    :type name: str
+    :return: R, G, B triple
+    :rtype: tuple of three ints
     """
     cdef fi.BYTE red, green, blue
     name = _decodeFilename(name)
@@ -2600,12 +2621,12 @@ def jpegTransform(src, dst, unsigned int op, unsigned int perfect=0):
 
     Perform lossless rotation or flipping on a JPEG image
 
-    @param src: path to source image
-    @type src: str
-    @param dst: path to destination file, can be the same file as src
-    @typ dst: str
-    @param op: a FIJPEG_OP_* constant
-    @param perfect: if true raises an exception if image has odd iMCU
+    :param src: path to source image
+    :type src: str
+    :param dst: path to destination file, can be the same file as src
+    :type dst: str
+    :param op: a FIJPEG_OP_* constant
+    :param perfect: if true raises an exception if image has odd iMCU
         aligned (see PDF)
     """
     cdef fi.BOOL result

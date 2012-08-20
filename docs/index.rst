@@ -14,14 +14,14 @@ Contents:
 Supported image formats
 =======================
 
-Image formats supported by FreeImage and PIL.
+Image formats supported by FreeImage, PIL and ImageMagick
 
 .. csv-table::
     :file: supported_filetypes.csv
     :delim: ;
     :quote: "
     :header-rows: 1
-    :widths: 6,3,15,18,6,6,6,6,34
+    :widths: 6,3,12,25,5,5,5,33
 
 PIL has only a limited support for TIFF files. Some compression schemas and
 multipage TIFFs aren't supported by PIL 1.1.7.

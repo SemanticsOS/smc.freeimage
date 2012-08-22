@@ -14,7 +14,7 @@ SETUPFLAGS=
 COMPILEFLAGS=
 
 .PHONY: inplace static all rebuild test_inplace test valgrind clean realclean 
-.PHONY: egg_info egg develop sdist pxd benchmark
+.PHONY: sdist pxd benchmark sphinx upload_sphinx
 
 
 inplace:

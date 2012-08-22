@@ -1,8 +1,23 @@
+=======
+License
+=======
+
+smc.freeimage uses the same licence as FreeImage in order to simply the
+usage and licensing. The current license of FreeImage is available at
+http://freeimage.sourceforge.net/license.html
+
+
+Changes
+=======
+
+2012-08-22  license may be GPLv2 or GPLv3 or FIPL 1.0
+
+
 smc.freeimage Open Source Dual-License
 ======================================
 
-smc.freeimage is licensed under the GNU General Public License (GPL) and the
-FreeImage Public License (FIPL)
+smc.freeimage is licensed under the GNU General Public License, version 2.0
+(GPLv2) or version 3.0 (GPLv3), and the FreeImage Public License (FIPL) 1.0.
 
 You can choose the license that has the most advantages for you:
 
@@ -55,4 +70,4 @@ Copyright (C) 2008-2012 semantics GmbH. All Rights Reserved.
   Tel.: +49 241 89 49 89 29
   eMail: info(at)semantics.de
   http://www.semantics.de/
- 
+

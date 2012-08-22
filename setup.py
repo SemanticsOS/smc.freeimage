@@ -210,14 +210,17 @@ setup_info = dict(
     maintainer_email="c.heimes@semantics.de",
     url="https://bitbucket.org/tiran/smc.freeimage",
     keywords="freeimage lcms image jpeg tiff png pil icc",
-    license="FIPL or GPL",
+    license="GPLv2, GPLv3 or FIPL 1.0",
     description="Python wrapper for FreeImage and LCMS2 libraries",
     long_description=getLongDescription(),
-    classifiers=(
+    download_url="http://pypi.python.org/pypi/smc.freeimage",
+    classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "License :: Other/Proprietary License",
         "License :: OSI Approved :: GNU General Public License (GPL)",
+        "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Natural Language :: English",
         "Operating System :: Microsoft :: Windows",
         "Operating System :: POSIX",
@@ -232,7 +235,7 @@ setup_info = dict(
         "Programming Language :: C",
         "Topic :: Multimedia :: Graphics",
         "Topic :: Software Development :: Libraries :: Python Modules"
-    ),
+    ],
 )
 
 if IS_WINDOWS:

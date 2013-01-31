@@ -691,6 +691,20 @@ class TestMultiPage(TestImageBase):
         self.assertRaises(IOError, len, mp)
         self.assertRaises(IOError, page.clone)
 
+    def test_multipage_write(self):
+        self.tmpdir = tempfile.mkdtemp()
+        filename = os.path.join(self.tmpdir, "multi.tif")
+
+        with Multipage(filename, "c", flags=CONSTANTS.TIFF_LZW) as mp:
+            self.assertEqual(len(mp), 0)
+            mp.append(self.biton)
+            self.assertEqual(len(mp), 1)
+            mp.append(self.img)
+            self.assertEqual(len(mp), 2)
+            mp.append(self.biton)
+            self.assertEqual(len(mp), 3)
+
+        #shutil.copy(filename, "/tmp")
 
 
 class TestMetadata(TestImageBase):
@@ -969,6 +983,7 @@ def test_memory():
 if __name__ == "__main__": # pragma: no cover
     suite = unittest2.TestSuite()
     suite.addTest(TestMultiPage("test_multipage_read"))
+    suite.addTest(TestMultiPage("test_multipage_write"))
     #suite.addTest(unittest2.defaultTestLoader.loadTestsFromTestCase(TestImageNewBuffer))
     #suite.addTest(TestImageNewBuffer("test_newbuffer"))
     #suite.addTest(TestImageNewBuffer("test_newbuffer_numpy"))

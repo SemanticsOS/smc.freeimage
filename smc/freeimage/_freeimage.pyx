@@ -654,7 +654,7 @@ cdef class Multipage:
     cdef readonly int read_only
     cdef readonly int create_new
 
-    def __init__(self, filename, mode="r", int flags = 0):
+    def __init__(self, filename, mode="r", int format=-1, int flags = 0):
         cdef char* cfilename
         cdef stdio.FILE *tmpf
 
@@ -683,11 +683,17 @@ cdef class Multipage:
                 stdio.fclose(tmpf)
 
         self._filename = cfilename
-        self._format = fi.FreeImage_GetFileType(cfilename, 0)
         self.mode = mode
         self.flags = flags
+        self._format = <fi.FREE_IMAGE_FORMAT>format
         if self._format == fi.FIF_UNKNOWN:
+            if self.create_new:
+                self._format = fi.FreeImage_GetFIFFromFilename(cfilename)
+            else:
+                self._format = fi.FreeImage_GetFileType(cfilename, 0)
+        if self._format < 0 or self._format > fi.FreeImage_GetFIFCount() - 1:
             raise dispatchFIError(UnknownImageError, filename)
+
         self._locked_images = []
 
         with nogil:

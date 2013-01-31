@@ -685,8 +685,6 @@ class TestMultiPage(TestImageBase):
             self.assertEqual(mp.format, FI_FORMAT.FIF_TIFF)
             self.assertEqual(mp.getLockedPageNumbers(), [])
             self.assertEqual(len(list(mp)), 4)
-            page = mp[0]
-            self.assertEqual(page.size, (3041, 5334))
 
         self.assertRaises(IOError, len, mp)
         self.assertRaises(IOError, page.clone)
@@ -703,6 +701,21 @@ class TestMultiPage(TestImageBase):
             self.assertEqual(len(mp), 2)
             mp.append(self.biton)
             self.assertEqual(len(mp), 3)
+            self.assertRaises(IOError, mp.__getitem__, 0)
+
+        self.assertRaises(IOError, len, mp)
+
+        #with Multipage(filename, "w") as mp:
+        #    self.assertEqual(len(mp), 3)
+        #    self.assertEqual([img.size for img in mp],
+        #                     [(2608, 4393), (1210, 1778), (2608, 4393)])
+        #    mp.append(self.biton)
+        #    self.assertEqual(len(mp), 4)
+
+        #with Multipage(filename, "r") as mp:
+        #    self.assertEqual([img.size for img in mp],
+        #                     [(2608, 4393), (2608, 4393)])
+
 
         #shutil.copy(filename, "/tmp")
 

@@ -641,6 +641,9 @@ cdef int floodfill(fi.FIBITMAP* dib, unsigned red, unsigned green, unsigned blue
 
     return ERR_UNSUP
 
+DEF MP_NONE = 0
+DEF MP_READ = 1
+DEF MP_WRITE = 2
 
 cdef class Multipage:
     """Multipage image support
@@ -723,22 +726,24 @@ cdef class Multipage:
             fi.FreeImage_CloseMultiBitmap(self._mp, 0)
             self._mp = NULL
 
-    cdef int _check_access(self, bint write) except -1:
+    cdef int _check_access(self, bint action) except -1:
         if self._mp == NULL:
             raise IOError("Operation on closed multipage")
-        if write and self.read_only:
+        if action & MP_WRITE and self.read_only:
             raise IOError("Write on read-only multipage")
+        if action & MP_READ and self.create_new:
+            raise IOError("Read on created multipage not supported")
         return 0
 
     def __len__(self):
-        self._check_access(0)
+        self._check_access(MP_NONE)
         return fi.FreeImage_GetPageCount(self._mp)
 
     def __getitem__(self, int page):
         cdef fi.FIBITMAP* dib
         cdef Image img
 
-        self._check_access(0)
+        self._check_access(MP_READ)
         if page >= fi.FreeImage_GetPageCount(self._mp):
             raise KeyError(page)
 
@@ -751,7 +756,7 @@ cdef class Multipage:
         return img
 
     def __iter__(self):
-        self._check_access(0)
+        self._check_access(MP_READ)
         length = fi.FreeImage_GetPageCount(self._mp)
         for page in range(length):
             yield self[page]
@@ -775,7 +780,7 @@ cdef class Multipage:
         cdef int* pages
         cdef int i
 
-        self._check_access(0)
+        self._check_access(MP_READ)
         if not fi.FreeImage_GetLockedPageNumbers(self._mp, NULL, &count):
             raise dispatchFIError(FreeImageError, "GetLockedPageNumbers")
 
@@ -791,21 +796,26 @@ cdef class Multipage:
         return sorted(result)
 
     def append(self, Image img):
-        self._check_access(1)
+        self._check_access(MP_WRITE)
         img._check_access(1)
         fi.FreeImage_AppendPage(self._mp, img._dib)
 
     def insert(self, int page, Image img):
-        self._check_access(1)
+        self._check_access(MP_WRITE)
         img._check_access(1)
+        # TODO check page
         fi.FreeImage_InsertPage(self._mp, page, img._dib)
 
-    def move(self, int source, int target):
-        self._check_access(1)
-        fi.FreeImage_MovePage(self._mp, target, source)
+    #def move(self, int source, int target):
+    #    cdef int result
+    #    self._check_access(MP_WRITE)
+    #    # TODO check source, target
+    #    result = fi.FreeImage_MovePage(self._mp, target, source)
+    #    if not result:
+    #        dispatchFIError(OperationError, "failed to move %i to %i" % (source, target))
 
     def delete(self, int page):
-        self._check_access(1)
+        self._check_access(MP_WRITE)
         fi.FreeImage_DeletePage(self._mp, page)
 
 

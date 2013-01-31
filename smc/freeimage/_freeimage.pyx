@@ -35,6 +35,7 @@ from libc cimport string
 
 import sys as _sys
 from logging import getLogger
+import weakref
 
 #--- constants
 __all__ = (
@@ -647,40 +648,91 @@ cdef class Multipage:
     cdef fi.FREE_IMAGE_FORMAT _format
     cdef char* _filename
     cdef fi.FIMULTIBITMAP* _mp
+    cdef _locked_images
+    cdef readonly mode
+    cdef readonly int flags
+    cdef readonly int read_only
+    cdef readonly int create_new
 
-    def __init__(self, filename, int flags = 0):
+    def __init__(self, filename, mode="r", int flags = 0):
         cdef char* cfilename
         cdef stdio.FILE *tmpf
 
         bfilename = _decodeFilename(filename)
         cfilename = <char*>bfilename
-        # try to open the file - will raise an exception if file can't be read
-        tmpf = stdio.fopen(cfilename, "r")
-        if tmpf == NULL:
-            cpython.PyErr_SetFromErrnoWithFilename(IOError, bfilename)
+
+        if mode == "r":
+            self.create_new = 0
+            self.read_only = 1
+        elif mode == "w":
+            self.create_new = 0
+            self.read_only = 0
+        elif mode == "c":
+            self.create_new = 1
+            self.read_only = 0
         else:
-            stdio.fclose(tmpf)
+            raise ValueError("invalid mode '%s', need 'r'ead, "
+                             "'w'rite or 'c'reate" % mode)
+
+        # try to open the file - will raise an exception if file can't be read
+        if not self.create_new:
+            tmpf = stdio.fopen(cfilename, "r")
+            if tmpf == NULL:
+                cpython.PyErr_SetFromErrnoWithFilename(IOError, bfilename)
+            else:
+                stdio.fclose(tmpf)
 
         self._filename = cfilename
         self._format = fi.FreeImage_GetFileType(cfilename, 0)
+        self.mode = mode
+        self.flags = flags
         if self._format == fi.FIF_UNKNOWN:
             raise dispatchFIError(UnknownImageError, filename)
+        self._locked_images = []
+
         with nogil:
             self._mp = fi.FreeImage_OpenMultiBitmap(self._format, self._filename,
-                                                    False, True, False, flags)
+                                                    self.create_new, self.read_only,
+                                                    False, self.flags)
         if self._mp == NULL:
             raise dispatchFIError(LoadError, filename)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc, value, tb):
+        self._close()
+
     def __dealloc__(self):
-        fi.FreeImage_CloseMultiBitmap(self._mp, 0)
+        self._close()
+
+    cdef _close(self):
+        if self._locked_images:
+            for wimg in self._locked_images:
+                img = wimg()
+                if img is not None:
+                    img.close()
+        self._locked_images = None
+        if self._mp != NULL:
+            fi.FreeImage_CloseMultiBitmap(self._mp, 0)
+            self._mp = NULL
+
+    cdef int _check_access(self, bint write) except -1:
+        if self._mp == NULL:
+            raise IOError("Operation on closed multipage")
+        if write and self.read_only:
+            raise IOError("Write on read-only multipage")
+        return 0
 
     def __len__(self):
+        self._check_access(0)
         return fi.FreeImage_GetPageCount(self._mp)
 
     def __getitem__(self, int page):
         cdef fi.FIBITMAP* dib
         cdef Image img
 
+        self._check_access(0)
         if page >= fi.FreeImage_GetPageCount(self._mp):
             raise KeyError(page)
 
@@ -689,10 +741,13 @@ cdef class Multipage:
             raise dispatchFIError(LoadError, "page %i" % page)
         img = Image(_bitmap=DibWrapper(dib, None))
         img._mp = self
+        self._locked_images.append(weakref.ref(img))
         return img
 
     def __iter__(self):
-        for page in range(len(self)):
+        self._check_access(0)
+        length = fi.FreeImage_GetPageCount(self._mp)
+        for page in range(length):
             yield self[page]
 
     property filename:
@@ -700,12 +755,6 @@ cdef class Multipage:
         """
         def __get__(self):
             return funicode(self._filename)
-
-    property size:
-        """size -> (width: int, height: int)
-        """
-        def __get__(self):
-            return self.width, self.height
 
     property format:
         """format -> int (fi.FIF_*)
@@ -720,6 +769,7 @@ cdef class Multipage:
         cdef int* pages
         cdef int i
 
+        self._check_access(0)
         if not fi.FreeImage_GetLockedPageNumbers(self._mp, NULL, &count):
             raise dispatchFIError(FreeImageError, "GetLockedPageNumbers")
 
@@ -733,6 +783,24 @@ cdef class Multipage:
 
         stdlib.free(pages)
         return sorted(result)
+
+    def append(self, Image img):
+        self._check_access(1)
+        img._check_access(1)
+        fi.FreeImage_AppendPage(self._mp, img._dib)
+
+    def insert(self, int page, Image img):
+        self._check_access(1)
+        img._check_access(1)
+        fi.FreeImage_InsertPage(self._mp, page, img._dib)
+
+    def move(self, int source, int target):
+        self._check_access(1)
+        fi.FreeImage_MovePage(self._mp, target, source)
+
+    def delete(self, int page):
+        self._check_access(1)
+        fi.FreeImage_DeletePage(self._mp, page)
 
 
 #--- Image
@@ -789,6 +857,9 @@ cdef class Image:
     cdef Py_ssize_t[3] _strides
     cdef Py_ssize_t[3] _suboffsets
     cdef __cythonbufferdefaults__ = {"ndim": 2, "mode": "c"}
+
+    # weak reference
+    cdef __weakref__
 
     def __init__(self, filename=None, buffer=None, _DibWrapper _bitmap = None,
                   int fd=-2, int flags = 0):
@@ -890,11 +961,17 @@ cdef class Image:
                 # not member of a multipage bitmap
                 with nogil:
                     fi.FreeImage_Unload(self._dib)
-                    self._dib = NULL
             else:
-                with nogil:
-                    fi.FreeImage_UnlockPage(self._mp._mp, self._dib, self._changed)
-                #self._mp = None
+                if self._mp._locked_images:
+                    for i, wimg in enumerate(self._mp._locked_images[:]):
+                        img = wimg()
+                        if img is self:
+                            self._mp._locked_images.pop(i)
+                            break
+                if self._mp._mp != NULL:
+                    with nogil:
+                        fi.FreeImage_UnlockPage(self._mp._mp, self._dib, self._changed)
+            self._dib = NULL
 
     cdef int _check_access(self, bint pixels) except -1:
         if self._dib == NULL:

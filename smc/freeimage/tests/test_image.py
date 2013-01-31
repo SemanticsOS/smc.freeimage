@@ -652,13 +652,13 @@ class TestImageNewBuffer(TestImageBase):
 
 
 class TestMultiPage(TestImageBase):
-    def test_multipage(self):
+    def test_multipage_read(self):
         mp = self.multipagemp = Multipage(MULTIPAGE)
         self.assertEqual(len(mp), 4)
         self.assertEqual(mp.filename, MULTIPAGE)
         self.assertEqual(mp.format, FI_FORMAT.FIF_TIFF)
-        self.assertEqual(len(list(mp)), 4)
         self.assertEqual(mp.getLockedPageNumbers(), [])
+        self.assertEqual(len(list(mp)), 4)
 
         page = mp[0]
         self.assertEqual(mp.getLockedPageNumbers(), [0])
@@ -678,6 +678,19 @@ class TestMultiPage(TestImageBase):
         del mp
         self.assertEqual(page.dpi, (600, 600))
         page.close()
+
+        with Multipage(MULTIPAGE) as mp:
+            self.assertEqual(len(mp), 4)
+            self.assertEqual(mp.filename, MULTIPAGE)
+            self.assertEqual(mp.format, FI_FORMAT.FIF_TIFF)
+            self.assertEqual(mp.getLockedPageNumbers(), [])
+            self.assertEqual(len(list(mp)), 4)
+            page = mp[0]
+            self.assertEqual(page.size, (3041, 5334))
+
+        self.assertRaises(IOError, len, mp)
+        self.assertRaises(IOError, page.clone)
+
 
 
 class TestMetadata(TestImageBase):
@@ -955,7 +968,7 @@ def test_memory():
 
 if __name__ == "__main__": # pragma: no cover
     suite = unittest2.TestSuite()
-    #suite.addTest(TestMultiPage("test_multipage"))
+    suite.addTest(TestMultiPage("test_multipage_read"))
     #suite.addTest(unittest2.defaultTestLoader.loadTestsFromTestCase(TestImageNewBuffer))
     #suite.addTest(TestImageNewBuffer("test_newbuffer"))
     #suite.addTest(TestImageNewBuffer("test_newbuffer_numpy"))
@@ -964,7 +977,7 @@ if __name__ == "__main__": # pragma: no cover
     #suite.addTest(TestImage("test_rotation"))
     #suite.addTest(TestImage("test_toBuffer_PIL"))
     #suite.addTest(TestImage("test_daterepresentation"))
-    suite.addTest(TestImage("test_cmyk"))
+    #suite.addTest(TestImage("test_cmyk"))
     #suite.addTest(TestMetadata("test_metadata"))
     #suite = test_main()
     run_tests(suite)

@@ -29,8 +29,8 @@
 // Version information ------------------------------------------------------
 
 #define FREEIMAGE_MAJOR_VERSION   3
-#define FREEIMAGE_MINOR_VERSION   15
-#define FREEIMAGE_RELEASE_SERIAL  3
+#define FREEIMAGE_MINOR_VERSION   16
+#define FREEIMAGE_RELEASE_SERIAL  0
 
 // Compiler options ---------------------------------------------------------
 
@@ -141,8 +141,8 @@ typedef uint8_t BYTE;
 typedef uint16_t WORD;
 typedef uint32_t DWORD;
 typedef int32_t LONG;
-typedef int64_t FIINT64;
-typedef uint64_t FIUINT64;
+typedef int64_t INT64;
+typedef uint64_t UINT64;
 #else
 // MS is not C99 ISO compliant
 typedef long BOOL;
@@ -150,8 +150,8 @@ typedef unsigned char BYTE;
 typedef unsigned short WORD;
 typedef unsigned long DWORD;
 typedef long LONG;
-typedef signed __int64 FIINT64;
-typedef unsigned __int64 FIUINT64;
+typedef signed __int64 INT64;
+typedef unsigned __int64 UINT64;
 #endif // _MSC_VER
 
 #if (defined(_WIN32) || defined(__WIN32__))
@@ -403,7 +403,8 @@ FI_ENUM(FREE_IMAGE_FORMAT) {
 	FIF_JP2		= 31,
 	FIF_PFM		= 32,
 	FIF_PICT	= 33,
-	FIF_RAW		= 34
+	FIF_RAW		= 34,
+	FIF_WEBP	= 35
 };
 
 /** Image type used in FreeImage.
@@ -649,7 +650,7 @@ typedef void (DLL_CALLCONV *FI_InitProc)(Plugin *plugin, int format_id);
 
 // Load / Save flag constants -----------------------------------------------
 
-#define FIF_LOAD_NOPIXELS 0x8000 // loading: load the image header only (not supported by all plugins)
+#define FIF_LOAD_NOPIXELS 0x8000 // loading: load the image header only (not supported by all plugins, default to full loading)
 
 #define BMP_DEFAULT         0
 #define BMP_SAVE_RLE        1
@@ -678,6 +679,7 @@ typedef void (DLL_CALLCONV *FI_InitProc)(Plugin *plugin, int format_id);
 #define JPEG_ACCURATE       0x0002	// load the file with the best quality, sacrificing some speed
 #define JPEG_CMYK			0x0004	// load separated CMYK "as is" (use | to combine with other load flags)
 #define JPEG_EXIFROTATE		0x0008	// load and rotate according to Exif 'Orientation' tag if available
+#define JPEG_GREYSCALE		0x0010	// load and convert to a 8-bit greyscale image
 #define JPEG_QUALITYSUPERB  0x80	// save with superb quality (100:1)
 #define JPEG_QUALITYGOOD    0x0100	// save with good quality (75:1)
 #define JPEG_QUALITYNORMAL  0x0200	// save with normal quality (50:1)
@@ -736,6 +738,8 @@ typedef void (DLL_CALLCONV *FI_InitProc)(Plugin *plugin, int format_id);
 #define WBMP_DEFAULT        0
 #define XBM_DEFAULT			0
 #define XPM_DEFAULT			0
+#define WEBP_DEFAULT		0		// save with good quality (75:1)
+#define WEBP_LOSSLESS		0x100	// save in lossless mode
 
 // Background filling options ---------------------------------------------------------
 // Constants used in FreeImage_FillBackground and FreeImage_EnlargeCanvas

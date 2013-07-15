@@ -35,7 +35,7 @@ class SimpleStuff(unittest2.TestCase):
     @owner("c.heimes")
     def test_getVersion(self):
         self.assert_(isinstance(freeimage.getVersion(), str))
-        self.assert_(freeimage.getVersion() in ["3.15.3"],
+        self.assert_(freeimage.getVersion() in ["3.16.0"],
                      freeimage.getVersion())
 
     @owner("c.heimes")
@@ -46,7 +46,7 @@ class SimpleStuff(unittest2.TestCase):
     @owner("c.heimes")
     def test_getCompiledFor(self):
         self.assert_(isinstance(freeimage.getCompiledFor(), tuple))
-        self.assert_(freeimage.getCompiledFor() in [(3, 15, 3)],
+        self.assert_(freeimage.getCompiledFor() in [(3, 16, 0)],
                      freeimage.getCompiledFor())
 
     @owner("c.heimes")
@@ -132,12 +132,12 @@ class SimpleStuff(unittest2.TestCase):
             self.fail("OperationError expected")
 
         formats = list(FormatInfo.list())
-        self.assertEqual(len(formats), 35)
+        self.assertEqual(len(formats), 36)
 
     @owner("c.heimes")
     def test_getFormatCount(self):
-        self.assertEqual(freeimage.getFormatCount(), 35)
-        self.assertEqual(freeimage.getFormatCount(), fi.FIF_RAW + 1)
+        self.assertEqual(freeimage.getFormatCount(), 36)
+        self.assertEqual(freeimage.getFormatCount(), fi.FIF_WEBP + 1)
 
     @owner("c.heimes")
     def test_lookupColor(self):

@@ -140,6 +140,7 @@ cdef extern from "FreeImage.h" nogil:
         FIF_PFM
         FIF_PICT
         FIF_RAW
+        FIF_WEBP
         FIF_LOAD_NOPIXELS
 
 
@@ -334,6 +335,7 @@ cdef extern from "FreeImage.h" nogil:
         JPEG_PROGRESSIVE
         JPEG_OPTIMIZE
         JPEG_BASELINE
+        JPEG_GREYSCALE
         JPEG_SUBSAMPLING_411
         JPEG_SUBSAMPLING_420
         JPEG_SUBSAMPLING_422
@@ -381,6 +383,8 @@ cdef extern from "FreeImage.h" nogil:
         TIFF_JPEG
         TIFF_LOGLUV
         WBMP_DEFAULT
+        WEBP_DEFAULT
+        WEBP_LOSSLESS
         XBM_DEFAULT
         XPM_DEFAULT
 

@@ -417,12 +417,15 @@ cdef extern from "lcms2.h" nogil:
     int TYPE_RGBA_16_PLANAR
     int TYPE_RGBA_16_SE
     int TYPE_ARGB_8
+    int TYPE_ARGB_8_PLANAR
     int TYPE_ARGB_16
     int TYPE_ABGR_8
+    int TYPE_ABGR_8_PLANAR
     int TYPE_ABGR_16
     int TYPE_ABGR_16_PLANAR
     int TYPE_ABGR_16_SE
     int TYPE_BGRA_8
+    int TYPE_BGRA_8_PLANAR
     int TYPE_BGRA_16
     int TYPE_BGRA_16_SE
     int TYPE_CMY_8
@@ -525,18 +528,31 @@ cdef extern from "lcms2.h" nogil:
     int TYPE_HSV_16_SE
     int TYPE_NAMED_COLOR_INDEX
     int TYPE_XYZ_FLT
-    int TYPE_XYZA_FLT
     int TYPE_Lab_FLT
     int TYPE_LabA_FLT
     int TYPE_GRAY_FLT
     int TYPE_RGB_FLT
     int TYPE_RGBA_FLT
+    int TYPE_ARGB_FLT
+    int TYPE_BGR_FLT
+    int TYPE_BGRA_FLT
+    int TYPE_ABGR_FLT
     int TYPE_CMYK_FLT
     int TYPE_XYZ_DBL
     int TYPE_Lab_DBL
     int TYPE_GRAY_DBL
     int TYPE_RGB_DBL
+    int TYPE_BGR_DBL
     int TYPE_CMYK_DBL
+    int TYPE_GRAY_HALF_FLT
+    int TYPE_RGB_HALF_FLT
+    int TYPE_RGBA_HALF_FLT
+    int TYPE_CMYK_HALF_FLT
+    int TYPE_RGBA_HALF_FLT
+    int TYPE_ARGB_HALF_FLT
+    int TYPE_BGR_HALF_FLT
+    int TYPE_BGRA_HALF_FLT
+    int TYPE_ABGR_HALF_FLT
     int cmsERROR_UNDEFINED
     int cmsERROR_FILE
     int cmsERROR_RANGE

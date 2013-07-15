@@ -50,7 +50,7 @@ class TestLCMS(TestImageBase):
 
     @owner("c.heimes")
     def test_lcmsVersion(self):
-        self.assertEqual(getLCMSVersion(), 2030)
+        self.assertEqual(getLCMSVersion(), 2050)
 
     @owner("c.heimes")
     def test_lcmsTrafo(self):

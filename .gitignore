@@ -16,7 +16,6 @@ static/libfreeimage.a
 static/libfreeimageturbo.a
 static/liblcms2.a
 
-syntax: glob
 smc/freeimage/_freeimage*.so
 smc/freeimage/ficonstants*.so
 smc/freeimage/lcmsconstants*.so

@@ -36,7 +36,7 @@ In order to create a static build you have to compile LCMS2 with::
 
   ./configure --with-pic --enable-static && make
 
-Then copy `lcms2-2.3/src/.libs/liblcms2.a`, `lcms2-2.3/include/lcms2.h`,
+Then copy `lcms2-2.5/src/.libs/liblcms2.a`, `lcms2-2.5/include/lcms2.h`,
 `FreeImage/Dist/libfreeimage.a` and `FreeImage/Dist/FreeImage.h` into the `static`
 folder of the project and run::
 

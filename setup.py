@@ -74,7 +74,7 @@ from distutils.ccompiler import new_compiler
 
 def getLongDescription():
     parts = []
-    for name in "README.txt", "CHANGES.txt":
+    for name in "README.rst", "CHANGES.txt":
         with io.open(name, "r") as f:
             parts.append(f.read())
     return "\n".join(parts)

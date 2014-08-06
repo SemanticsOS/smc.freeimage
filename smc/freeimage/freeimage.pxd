@@ -141,6 +141,7 @@ cdef extern from "FreeImage.h" nogil:
         FIF_PICT
         FIF_RAW
         FIF_WEBP
+        FIF_JXR
         FIF_LOAD_NOPIXELS
 
 
@@ -367,6 +368,7 @@ cdef extern from "FreeImage.h" nogil:
         RAW_PREVIEW
         RAW_DISPLAY
         RAW_HALFSIZE
+        RAW_UNPROCESSED
         SGI_DEFAULT
         TARGA_DEFAULT
         TARGA_LOAD_RGB888
@@ -385,6 +387,9 @@ cdef extern from "FreeImage.h" nogil:
         WBMP_DEFAULT
         WEBP_DEFAULT
         WEBP_LOSSLESS
+        JXR_DEFAULT
+        JXR_LOSSLESS
+        JXR_PROGRESSIVE
         XBM_DEFAULT
         XPM_DEFAULT
 
@@ -551,6 +556,7 @@ cdef extern from "FreeImage.h" nogil:
     cdef FIBITMAP * FreeImage_Threshold(FIBITMAP *dib, BYTE T)
     cdef FIBITMAP * FreeImage_Dither(FIBITMAP *dib, FREE_IMAGE_DITHER algorithm)
     cdef FIBITMAP * FreeImage_ConvertFromRawBits(BYTE *bits, int width, int height, int pitch, unsigned bpp, unsigned red_mask, unsigned green_mask, unsigned blue_mask, BOOL topdown)
+    cdef FIBITMAP * FreeImage_ConvertFromRawBitsEx(BOOL copySource, BYTE *bits, FREE_IMAGE_TYPE type, int width, int height, int pitch, unsigned bpp, unsigned red_mask, unsigned green_mask, unsigned blue_mask, BOOL topdown)
     cdef void  FreeImage_ConvertToRawBits(BYTE *bits, FIBITMAP *dib, int pitch, unsigned bpp, unsigned red_mask, unsigned green_mask, unsigned blue_mask, BOOL topdown)
     cdef FIBITMAP * FreeImage_ConvertToFloat(FIBITMAP *dib)
     cdef FIBITMAP * FreeImage_ConvertToRGBF(FIBITMAP *dib)
@@ -590,16 +596,23 @@ cdef extern from "FreeImage.h" nogil:
     cdef void  FreeImage_FindCloseMetadata(FIMETADATA *mdhandle)
     cdef BOOL  FreeImage_SetMetadata(FREE_IMAGE_MDMODEL model, FIBITMAP *dib, char *key, FITAG *tag)
     cdef BOOL  FreeImage_GetMetadata(FREE_IMAGE_MDMODEL model, FIBITMAP *dib, char *key, FITAG **tag)
+    cdef BOOL  FreeImage_SetMetadataKeyValue(FREE_IMAGE_MDMODEL model, FIBITMAP *dib, char *key, char *value)
     cdef unsigned  FreeImage_GetMetadataCount(FREE_IMAGE_MDMODEL model, FIBITMAP *dib)
     cdef BOOL  FreeImage_CloneMetadata(FIBITMAP *dst, FIBITMAP *src)
     cdef char*  FreeImage_TagToString(FREE_IMAGE_MDMODEL model, FITAG *tag, char *Make)
+    cdef BOOL  FreeImage_JPEGTransform(char *src_file, char *dst_file, FREE_IMAGE_JPEG_OPERATION operation, BOOL perfect)
+    # cdef BOOL  FreeImage_JPEGTransformU(wchar_t *src_file, wchar_t *dst_file, FREE_IMAGE_JPEG_OPERATION operation, BOOL perfect)
+    cdef BOOL  FreeImage_JPEGCrop(char *src_file, char *dst_file, int left, int top, int right, int bottom)
+    # cdef BOOL  FreeImage_JPEGCropU(wchar_t *src_file, wchar_t *dst_file, int left, int top, int right, int bottom)
+    cdef BOOL  FreeImage_JPEGTransformFromHandle(FreeImageIO* src_io, fi_handle src_handle, FreeImageIO* dst_io, fi_handle dst_handle, FREE_IMAGE_JPEG_OPERATION operation, int* left, int* top, int* right, int* bottom, BOOL perfect)
+    cdef BOOL  FreeImage_JPEGTransformCombined(char *src_file, char *dst_file, FREE_IMAGE_JPEG_OPERATION operation, int* left, int* top, int* right, int* bottom, BOOL perfect)
+    # cdef BOOL  FreeImage_JPEGTransformCombinedU(wchar_t *src_file, wchar_t *dst_file, FREE_IMAGE_JPEG_OPERATION operation, int* left, int* top, int* right, int* bottom, BOOL perfect)
+    cdef BOOL  FreeImage_JPEGTransformCombinedFromMemory(FIMEMORY* src_stream, FIMEMORY* dst_stream, FREE_IMAGE_JPEG_OPERATION operation, int* left, int* top, int* right, int* bottom, BOOL perfect)
     cdef FIBITMAP * FreeImage_RotateClassic(FIBITMAP *dib, double angle)
     cdef FIBITMAP * FreeImage_Rotate(FIBITMAP *dib, double angle, void *bkcolor)
     cdef FIBITMAP * FreeImage_RotateEx(FIBITMAP *dib, double angle, double x_shift, double y_shift, double x_origin, double y_origin, BOOL use_mask)
     cdef BOOL  FreeImage_FlipHorizontal(FIBITMAP *dib)
     cdef BOOL  FreeImage_FlipVertical(FIBITMAP *dib)
-    cdef BOOL  FreeImage_JPEGTransform(char *src_file, char *dst_file, FREE_IMAGE_JPEG_OPERATION operation, BOOL perfect)
-    # cdef BOOL  FreeImage_JPEGTransformU(wchar_t *src_file, wchar_t *dst_file, FREE_IMAGE_JPEG_OPERATION operation, BOOL perfect)
     cdef FIBITMAP * FreeImage_Rescale(FIBITMAP *dib, int dst_width, int dst_height, FREE_IMAGE_FILTER filter)
     cdef FIBITMAP * FreeImage_MakeThumbnail(FIBITMAP *dib, int max_pixel_size, BOOL convert)
     cdef BOOL  FreeImage_AdjustCurve(FIBITMAP *dib, BYTE *LUT, FREE_IMAGE_COLOR_CHANNEL channel)
@@ -621,8 +634,6 @@ cdef extern from "FreeImage.h" nogil:
     cdef FIBITMAP * FreeImage_Copy(FIBITMAP *dib, int left, int top, int right, int bottom)
     cdef BOOL  FreeImage_Paste(FIBITMAP *dst, FIBITMAP *src, int left, int top, int alpha)
     cdef FIBITMAP * FreeImage_Composite(FIBITMAP *fg, BOOL useFileBkg, RGBQUAD *appBkColor, FIBITMAP *bg)
-    cdef BOOL  FreeImage_JPEGCrop(char *src_file, char *dst_file, int left, int top, int right, int bottom)
-    # cdef BOOL  FreeImage_JPEGCropU(wchar_t *src_file, wchar_t *dst_file, int left, int top, int right, int bottom)
     cdef BOOL  FreeImage_PreMultiplyWithAlpha(FIBITMAP *dib)
     cdef BOOL  FreeImage_FillBackground(FIBITMAP *dib, void *color, int options)
     cdef FIBITMAP * FreeImage_EnlargeCanvas(FIBITMAP *src, int left, int top, int right, int bottom, void *color, int options)

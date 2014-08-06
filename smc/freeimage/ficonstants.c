@@ -125,6 +125,7 @@ initficonstants(void)
     PyModule_AddIntConstant(m, "FIF_PICT", FIF_PICT);
     PyModule_AddIntConstant(m, "FIF_RAW", FIF_RAW);
     PyModule_AddIntConstant(m, "FIF_WEBP", FIF_WEBP);
+    PyModule_AddIntConstant(m, "FIF_JXR", FIF_JXR);
     PyModule_AddIntConstant(m, "FIF_LOAD_NOPIXELS", FIF_LOAD_NOPIXELS);
 
     /* Enum: FREE_IMAGE_QUANTIZE */
@@ -339,6 +340,7 @@ initficonstants(void)
     PyModule_AddIntConstant(m, "RAW_PREVIEW", RAW_PREVIEW);
     PyModule_AddIntConstant(m, "RAW_DISPLAY", RAW_DISPLAY);
     PyModule_AddIntConstant(m, "RAW_HALFSIZE", RAW_HALFSIZE);
+    PyModule_AddIntConstant(m, "RAW_UNPROCESSED", RAW_UNPROCESSED);
     PyModule_AddIntConstant(m, "SGI_DEFAULT", SGI_DEFAULT);
     PyModule_AddIntConstant(m, "TARGA_DEFAULT", TARGA_DEFAULT);
     PyModule_AddIntConstant(m, "TARGA_LOAD_RGB888", TARGA_LOAD_RGB888);
@@ -357,6 +359,9 @@ initficonstants(void)
     PyModule_AddIntConstant(m, "WBMP_DEFAULT", WBMP_DEFAULT);
     PyModule_AddIntConstant(m, "WEBP_DEFAULT", WEBP_DEFAULT);
     PyModule_AddIntConstant(m, "WEBP_LOSSLESS", WEBP_LOSSLESS);
+    PyModule_AddIntConstant(m, "JXR_DEFAULT", JXR_DEFAULT);
+    PyModule_AddIntConstant(m, "JXR_LOSSLESS", JXR_LOSSLESS);
+    PyModule_AddIntConstant(m, "JXR_PROGRESSIVE", JXR_PROGRESSIVE);
     PyModule_AddIntConstant(m, "XBM_DEFAULT", XBM_DEFAULT);
     PyModule_AddIntConstant(m, "XPM_DEFAULT", XPM_DEFAULT);
 #if PY_MAJOR_VERSION >= 3

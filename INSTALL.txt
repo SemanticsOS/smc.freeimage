@@ -15,7 +15,7 @@ Requirements
 
 - Cython 0.16+  http://cython.org/
 
-- FreeImage 3.16.0  http://freeimage.sourceforge.net/
+- FreeImage 3.16.1  http://freeimage.sourceforge.net/
 
 - LCMS 2.5  http://www.littlecms.com/
 

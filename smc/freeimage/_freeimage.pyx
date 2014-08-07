@@ -584,6 +584,12 @@ cdef class _MemoryIO:
         if (self.size - pos) < rsize:
             rsize = self.size - pos
 
+	# Raise an exception that PIL understands as "format not
+        # supported" (rather than SystemError from
+        # PyBytes_FromStringAndSize, which is fatal).
+        if rsize < 0:
+           raise IndexError
+
         # allocate buffer
         result = cpython.PyBytes_FromStringAndSize(NULL, rsize)
         buf = cpython.PyBytes_AsString(result)
